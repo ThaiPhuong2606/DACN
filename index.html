@@ -1,39 +1,173 @@
 <!DOCTYPE html>
 <html lang="vi">
+
 <head>
-    <meta charset="UTF-8">
-    <title>Trang chủ</title>
-    <link rel="stylesheet" href="style.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Trạm Y Tế Phường 10</title>
+
+<link rel="stylesheet" href="style.css">
+
 </head>
+
+
 <body>
 
+<!-- TOP BAR -->
+<div class="topbar">
+<span id="time"></span>
+<div class="lang">VN | EN</div>
+</div>
+
+
+<!-- HEADER -->
 <header class="header">
-    <h1>🏥 Trạm Y Tế Phường ABC</h1>
+
+<div class="logo-box">
+
+<div class="logo">YT</div>
+
+<div class="title">
+<h1>TRANG THÔNG TIN ĐIỆN TỬ</h1>
+<h2>TRẠM Y TẾ PHƯỜNG 10</h2>
+</div>
+
+</div>
+
+<input class="search" placeholder="Từ khóa tìm kiếm">
+
 </header>
 
-<nav class="navbar">
-    <a href="index.html" class="active">Trang chủ</a>
-    <a href="benhnhan.html">Bệnh nhân</a>
-    <a href="lichkham.html">Lịch khám</a>
+
+<!-- MENU -->
+<nav class="menu">
+
+<a href="#">GIỚI THIỆU</a>
+<a href="#">TIÊM CHỦNG</a>
+<a href="#">GIÁO DỤC SỨC KHỎE</a>
+<a href="#">PHÒNG CHỐNG DỊCH BỆNH</a>
+<a href="#">CHĂM SÓC TRẺ EM</a>
+<a href="#">TIN TỨC</a>
+
 </nav>
 
-<main>
-    <h2>Trang chủ</h2>
-    <div class="dashboard">
-        <div class="card">
-            <h3>👨‍⚕️ Bệnh nhân</h3>
-            <p>120</p>
-        </div>
-        <div class="card">
-            <h3>📅 Lịch hôm nay</h3>
-            <p>15</p>
-        </div>
-        <div class="card">
-            <h3>💊 Thuốc</h3>
-            <p>50</p>
-        </div>
-    </div>
-</main>
+
+<!-- MAIN -->
+<div class="container">
+
+<!-- LEFT BUTTON -->
+<div class="left-buttons">
+
+<button>Tin tức</button>
+<button>Thông báo</button>
+<button>Thư mời</button>
+
+</div>
+
+
+<!-- MAIN CONTENT -->
+<div class="content">
+
+<!-- SLIDE -->
+<div class="main-slide" id="slideText">
+<img id="mainImage" src="" alt="" style="display:none; width:100%; height:100%; object-fit:cover; border-radius:6px;">
+<div id="slideContent">
+CHĂM SÓC MẸ VÀ BÉ
+<br>
+<span>Tư vấn dinh dưỡng và lịch khám thai đầy đủ.</span>
+</div>
+</div>
+
+
+<!-- THUMB NEWS -->
+<div class="thumb-wrapper">
+
+<button class="arrow left" onclick="scrollThumb(-1)">❮</button>
+
+<div class="thumb-row" id="thumbRow">
+
+<div class="thumb">
+<img src="https://images.unsplash.com/photo-1576091160399-112ba8d25d1d">
+<p>Khám sức khỏe định kỳ cho người cao tuổi</p>
+</div>
+
+<div class="thumb">
+<img src="https://images.unsplash.com/photo-1584515933487-779824d29309">
+<p>Phòng chống sốt xuất huyết mùa mưa</p>
+</div>
+
+<div class="thumb">
+<img src="https://images.unsplash.com/photo-1585435557343-3b092031a831">
+<p>Lịch tiêm chủng trẻ em tháng này</p>
+</div>
+
+<div class="thumb">
+<img src="https://images.unsplash.com/photo-1579684385127-1ef15d508118">
+<p>Dinh dưỡng cho người bệnh tiểu đường</p>
+</div>
+
+<div class="thumb">
+<img src="https://images.unsplash.com/photo-1584744982491-665216d95f8b">
+<p>Khuyến cáo đeo khẩu trang</p>
+</div>
+
+<div class="thumb">
+<img src="https://images.unsplash.com/photo-1579154204601-01588f351e67">
+<p>Tầm soát ung thư sớm</p>
+</div>
+
+<div class="thumb">
+<img src="https://images.unsplash.com/photo-1516574187841-cb9cc2ca948b">
+<p>Chăm sóc sức khỏe mẹ và bé</p>
+</div>
+
+</div>
+
+<button class="arrow right" onclick="scrollThumb(1)">❯</button>
+
+</div>
+
+
+<!-- THÔNG BÁO -->
+<div class="notice">
+
+<h3>THÔNG BÁO</h3>
+
+<ul>
+<li>LỊCH TIÊM CHỦNG NĂM 2024</li>
+</ul>
+
+</div>
+
+
+</div>
+
+</div>
+
+
+<!-- FOOTER -->
+<footer>
+
+<div class="footer-left">
+
+<h4>CỔNG THÔNG TIN ĐIỆN TỬ NGÀNH Y TẾ TP.HCM</h4>
+
+<p>Số điện thoại: 028 3930 9912</p>
+<p>Email: syt@tphcm.gov.vn</p>
+<p>Địa chỉ: 59 Nguyễn Thị Minh Khai, Quận 1, TP.HCM</p>
+
+</div>
+
+<div class="footer-right">
+
+Powered by QI GROUP
+
+</div>
+
+</footer>
+
+
+<script src="script.js"></script>
 
 </body>
 </html>
