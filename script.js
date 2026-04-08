@@ -45,9 +45,20 @@ window.addEventListener("load", () => {
     const slideContent = document.getElementById("slideContent");
     const mainSlide = document.getElementById("slideText");
 
-    // Nội dung mặc định ban đầu
-    const defaultTitle = "CHĂM SÓC MẸ VÀ BÉ";
-    const defaultDesc = "Tư vấn dinh dưỡng và lịch khám thai đầy đủ.";
+    if (!thumbs.length) return;
+
+    const firstThumb = thumbs[0];
+    const defaultImg = firstThumb.querySelector("img").src;
+    const defaultTitle = firstThumb.querySelector("p").innerText;
+    const defaultDesc = `Thông tin chi tiết về: ${defaultTitle}`;
+
+    mainImage.src = defaultImg;
+    mainImage.style.display = "block";
+    slideContent.innerHTML = `
+        <h2>${defaultTitle}</h2>
+        <p>${defaultDesc}</p>
+    `;
+    mainSlide.style.background = "white";
 
     thumbs.forEach(thumb => {
         thumb.addEventListener("mouseenter", () => {
@@ -68,17 +79,15 @@ window.addEventListener("load", () => {
         });
 
         thumb.addEventListener("mouseleave", () => {
-            // Trả về mặc định
-            mainImage.style.display = "none";
-
+            // Trả về thumbnail đầu tiên
+            mainImage.src = defaultImg;
+            mainImage.style.display = "block";
             slideContent.innerHTML = `
-                ${defaultTitle}
-                <br>
-                <span>${defaultDesc}</span>
+                <h2>${defaultTitle}</h2>
+                <p>${defaultDesc}</p>
             `;
 
-            mainSlide.style.background =
-                "linear-gradient(135deg,#fff8c4,#fffde7)";
+            mainSlide.style.background = "white";
         });
     });
 });
