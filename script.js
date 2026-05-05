@@ -148,4 +148,48 @@ window.addEventListener("load", () => {
 
     disableKeyboardEntry(dateInput);
     disableKeyboardEntry(timeInput);
+
+    const familySelect = document.getElementById("family");
+    const nameInput = document.getElementById("name");
+    const phoneInput = document.getElementById("phone");
+    const emailInput = document.getElementById("email");
+
+    if (familySelect) {
+        familySelect.addEventListener("change", (e) => {
+            if (e.target.value === "self") {
+                const userProfile = JSON.parse(localStorage.getItem("userProfile") || "{}");
+                
+                if (userProfile.name) {
+                    nameInput.value = userProfile.name;
+                    nameInput.disabled = true;
+                } else {
+                    nameInput.value = "";
+                    nameInput.disabled = true;
+                }
+
+                if (userProfile.phone) {
+                    phoneInput.value = userProfile.phone;
+                    phoneInput.disabled = true;
+                } else {
+                    phoneInput.value = "";
+                    phoneInput.disabled = true;
+                }
+
+                if (userProfile.email) {
+                    emailInput.value = userProfile.email;
+                    emailInput.disabled = true;
+                } else {
+                    emailInput.value = "";
+                    emailInput.disabled = true;
+                }
+            } else {
+                nameInput.value = "";
+                nameInput.disabled = false;
+                phoneInput.value = "";
+                phoneInput.disabled = false;
+                emailInput.value = "";
+                emailInput.disabled = false;
+            }
+        });
+    }
 });
