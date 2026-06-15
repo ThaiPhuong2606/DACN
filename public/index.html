@@ -159,111 +159,213 @@
 <div class="container">
 
 <aside class="left-column">
-<!-- USER HEADER -->
-  <button id="patientHeader" class="header-card patient-header-trigger" type="button" onclick="openPatientDetail()" style="display:none;">
-    <div style="display: flex; align-items: center;">
-      <div class="avatar" id="patientAvatar" style="margin-left: 5px;"></div>
-      <div class="user-info" style="margin-left: 10px; text-align: left;">
-        <h2 id="patientNameWrap">
-          <span id="patientName"></span>
-          <span class="badge" id="patientAddress">
-            <i class="ti ti-map-pin" style="font-size:11px"></i>  
-          </span>
-        </h2>
-        <p id="patientMeta"></p>
+<!-- DOCTOR PANEL — ẩn mặc định -->
+  <div id="doctorPanel" style="display:none">
+
+    <!-- Header bác sĩ -->
+    <div class="header-card" style="margin-bottom:12px">
+      <div class="avatar" id="doctorAvatar" style="background:#60A5FA">BS</div>
+      <div class="user-info">
+        <h2 id="doctorPanelName">Bác sĩ</h2>
+        <p id="doctorPanelEmail" style="font-size:12px;color:#7a8fa6"></p>
       </div>
     </div>
-    <div class="user-meta">
-      <div class="label"></div>
-      <div class="code" id="patientCode"></div>
+
+    <!-- Tab buttons -->
+    <div style="display:flex;gap:6px;margin-bottom:12px">
+      <button class="doc-tab active" data-tab="queue" onclick="switchDoctorTab('queue')" style="
+        flex:1;padding:8px 4px;border-radius:10px;border:none;
+        background:smokegrey;color:#60A5FA;font-weight:600;cursor:pointer;font-size:12px;
+      ">Hàng chờ</button>
+      <button class="doc-tab" data-tab="examine" onclick="switchDoctorTab('examine')" style="
+        flex:1;padding:8px 4px;border-radius:10px;border:none;
+        background:smokegrey;color:#60A5FA;font-weight:600;cursor:pointer;font-size:12px;
+      ">Khám</button>
+      <button class="doc-tab" data-tab="prescription" onclick="switchDoctorTab('prescription')" style="
+        flex:1;padding:8px 4px;border-radius:10px;border:none;
+        background:smokegrey;color:#60A5FA;font-weight:600;cursor:pointer;font-size:12px;
+      ">Toa thuốc</button>
     </div>
-  </button>
 
-  <!-- MAIN FLOW -->
-  <div class="main-flow" id="mainFlow" style="display:none;">
+    <!-- Tab: Hàng chờ -->
+    <div id="docTab_queue" class="card" style="padding:14px">
+      <div class="section-title" style="color:grey">Bệnh nhân hôm nay</div>
+      <div style="font-size:12px;color:grey;margin-bottom:10px">
+        Ưu tiên: người già, khuyết tật
+      </div>
+      <div id="queueList">
+        <div style="text-align:center;color:#999;padding:20px;font-size:13px">Đang tải...</div>
+      </div>
+    </div>
 
-    <!-- CHỌN NGƯỜI KHÁM -->
-    <div class="card">
-      <div class="section-title">Chọn người khám</div>
+    <!-- Tab: Khám bệnh -->
+    <div id="docTab_examine" class="card" style="display:none;padding:14px;">
+      <div class="section-title" style="color:grey">Khám bệnh</div>
 
-      <div class="patient-grid" id="patientGrid"></div>
+      <div id="currentPatientInfo" style="
+        background:#f0f2f7;border-radius:10px;padding:10px;
+        font-size:13px;color:#1a3a5c;margin-bottom:12px;
+      ">Chưa chọn bệnh nhân</div>
 
-      <button class="add-member-btn" onclick="openModal()">
-        <i class="ti ti-user-plus" style="font-size:16px"></i>
-        Thêm thành viên gia đình
+      <div style="display:flex;gap:6px;margin-bottom:10px">
+        <button onclick="setMedicine('tay')" id="btn_tay" style="
+          flex:1;padding:8px;border-radius:8px;
+          border:2px solid #60A5FA;background:#60A5FA;
+          color:#fff;font-weight:600;cursor:pointer;font-size:12px;
+        ">Tây Y</button>
+        <button onclick="setMedicine('dong')" id="btn_dong" style="
+          flex:1;padding:8px;border-radius:8px;
+          border:2px solid #60A5FA;background:#fff;
+          color:#60A5FA;font-weight:600;cursor:pointer;font-size:12px;
+        ">Đông Y</button>
+      </div>
+
+      <div id="methodList" style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:12px"></div>
+
+      <textarea id="diagnosisInput" rows="2" placeholder="Chẩn đoán..." style="
+        width:100%;padding:8px;border-radius:8px;
+        border:1.5px solid #e0e0e0;font-size:13px;
+        box-sizing:border-box;resize:none;margin-bottom:8px;
+      "></textarea>
+
+      <textarea id="treatmentNote" rows="2" placeholder="Ghi chú điều trị..." style="
+        width:100%;padding:8px;border-radius:8px;
+        border:1.5px solid #e0e0e0;font-size:13px;
+        box-sizing:border-box;resize:none;margin-bottom:10px;
+      "></textarea>
+
+      <button onclick="saveTreatment()" style="
+        width:100%;padding:10px;border-radius:10px;border:none;
+        background:#60A5FA;color:#fff;font-size:13px;font-weight:600;cursor:pointer;
+      ">Lưu kết quả khám</button>
+    </div>
+
+    <!-- Tab: Toa thuốc -->
+    <div id="docTab_prescription" class="card" style="display:none;padding:14px">
+      <div class="section-title" style="color:grey">Toa thuốc</div>
+
+      <div id="prescPatientInfo" style="
+        background:#f0f2f7;border-radius:10px;padding:10px;
+        font-size:13px;color:#1a3a5c;margin-bottom:12px;
+      ">Chưa chọn bệnh nhân</div>
+
+      <div id="prescriptionItems" style="display:flex;flex-direction:column;gap:6px;margin-bottom:10px"></div>
+
+      <button onclick="addPrescriptionRow()" style="
+        width:100%;padding:8px;border-radius:8px;
+        border:2px dashed #60A5FA;background:#fff;
+        color:#60A5FA;font-size:13px;font-weight:600;cursor:pointer;margin-bottom:10px;
+      ">+ Thêm thuốc</button>
+
+      <button onclick="savePrescription()" style="
+        width:100%;padding:10px;border-radius:10px;border:none;
+        background:#60A5FA;color:#fff;font-size:13px;font-weight:600;cursor:pointer;
+      ">Lưu toa thuốc</button>
+    </div>
+
+  </div>
+  <!-- END DOCTOR PANEL -->
+
+  <!-- PATIENT PANEL -->
+  <div id="patientPanel">
+
+    <!-- USER HEADER -->
+    <button id="patientHeader" class="header-card patient-header-trigger" type="button" onclick="openPatientDetail()" style="display:none;">
+      <div style="display:flex;align-items:center;">
+        <div class="avatar" id="patientAvatar" style="margin-left:5px;"></div>
+        <div class="user-info" style="margin-left:10px;text-align:left;">
+          <h2 id="patientNameWrap">
+            <span id="patientName"></span>
+            <span class="badge" id="patientAddress">
+              <i class="ti ti-map-pin" style="font-size:11px"></i>
+            </span>
+          </h2>
+          <p id="patientMeta"></p>
+        </div>
+      </div>
+      <div class="user-meta">
+        <div class="label"></div>
+        <div class="code" id="patientCode"></div>
+      </div>
+    </button>
+
+    <!-- MAIN FLOW -->
+    <div class="main-flow" id="mainFlow" style="display:none;">
+
+      <!-- CHỌN NGƯỜI KHÁM -->
+      <div class="card">
+        <div class="section-title">Chọn người khám</div>
+        <div class="patient-grid" id="patientGrid"></div>
+        <button class="add-member-btn" onclick="openModal()">
+          <i class="ti ti-user-plus" style="font-size:16px"></i>
+          Thêm thành viên gia đình
+        </button>
+      </div>
+
+      <!-- NGÀY & GIỜ -->
+      <div class="card">
+        <div class="section-title">Chọn ngày khám</div>
+        <div id="dateList"></div>
+        <div class="date-row" id="dateRow"></div>
+        <div class="section-title" style="margin-top:.25rem">
+          Khung giờ khám
+        </div>
+        <div class="time-grid" id="timeGrid"></div>
+      </div>
+
+      <!-- GHI CHÚ -->
+      <div class="card note-area">
+        <div class="section-title">Ghi chú triệu chứng</div>
+        <textarea
+          id="noteInput"
+          rows="2"
+          placeholder="Mô tả ngắn triệu chứng hoặc lý do khám..."
+        ></textarea>
+      </div>
+
+      <!-- XÁC NHẬN -->
+      <div class="card" id="summaryCard" style="display:none">
+        <div class="section-title">Xác nhận thông tin đặt lịch</div>
+        <div class="summary-box" id="summaryContent"></div>
+      </div>
+
+      <button class="submit-btn" onclick="handleSubmit()">
+        <i class="ti ti-calendar-check" style="font-size:18px"></i>
+        <span id="submitText">Xem xác nhận</span>
+      </button>
+
+    </div>
+
+    <!-- SUCCESS SCREEN -->
+    <div class="success-screen" id="successScreen">
+      <div class="check-circle">
+        <i class="ti ti-check"></i>
+      </div>
+      <div class="success-title">Đặt lịch thành công!</div>
+      <div class="success-subtitle">Mã cuộc hẹn của bạn</div>
+      <div class="appt-code" id="apptCode"></div>
+      <div class="card success-summary-card">
+        <div class="summary-box" id="successSummary"></div>
+      </div>
+      <p class="success-note">
+        <i class="ti ti-bell-ringing" style="vertical-align:-2px;font-size:14px"></i>
+        Thông báo nhắc lịch sẽ được gửi qua SMS trước 1 ngày
+      </p>
+      <hr class="divider">
+      <button class="add-member-btn" style="justify-content:center" onclick="resetAll()">
+        <i class="ti ti-refresh" style="font-size:15px"></i>
+        Đặt lịch mới
       </button>
     </div>
 
-    <!-- NGÀY & GIỜ -->
-    <div class="card">
-      <div class="section-title">Chọn ngày khám</div>
-      <div id="dateList"></div>
-      <div class="date-row" id="dateRow"></div>
-
-      <div class="section-title" style="margin-top:.25rem">
-        Khung giờ khám
-      </div>
-
-      <div class="time-grid" id="timeGrid"></div>
+    <!-- LOGIN PROMPT -->
+    <div id="loginPrompt" style="text-align:center;padding:32px 16px;color:#999">
+      <i class="ti ti-lock" style="font-size:36px;display:block;margin-bottom:8px"></i>
+      Vui lòng đăng nhập để đặt lịch khám
     </div>
-
-    <!-- GHI CHÚ -->
-    <div class="card note-area">
-      <div class="section-title">Ghi chú triệu chứng</div>
-
-      <textarea
-        id="noteInput"
-        rows="2"
-        placeholder="Mô tả ngắn triệu chứng hoặc lý do khám..."
-      ></textarea>
-    </div>
-
-    <!-- XÁC NHẬN -->
-    <div class="card" id="summaryCard" style="display:none">
-      <div class="section-title">Xác nhận thông tin đặt lịch</div>
-
-      <div class="summary-box" id="summaryContent"></div>
-    </div>
-
-    <button class="submit-btn" onclick="handleSubmit()">
-      <i class="ti ti-calendar-check" style="font-size:18px"></i>
-      <span id="submitText">Xem xác nhận</span>
-    </button>
 
   </div>
-
-  <!-- SUCCESS SCREEN -->
-  <div class="success-screen" id="successScreen">
-    <div class="check-circle">
-      <i class="ti ti-check"></i>
-    </div>
-
-    <div class="success-title">
-      Đặt lịch thành công!
-    </div>
-
-    <div class="success-subtitle">
-      Mã cuộc hẹn của bạn
-    </div>
-
-    <div class="appt-code" id="apptCode"></div>
-
-    <div class="card success-summary-card">
-      <div class="summary-box" id="successSummary"></div>
-    </div>
-
-    <p class="success-note">
-      <i class="ti ti-bell-ringing" style="vertical-align:-2px;font-size:14px"></i>
-      Thông báo nhắc lịch sẽ được gửi qua SMS trước 1 ngày
-    </p>
-
-    <hr class="divider">
-
-    <button class="add-member-btn" style="justify-content:center" onclick="resetAll()">
-      <i class="ti ti-refresh" style="font-size:15px"></i>
-      Đặt lịch mới
-    </button>
-  </div>
+  <!-- END PATIENT PANEL -->
 
 
 <!-- MODAL -->
@@ -380,7 +482,7 @@
         </div>
       </div>
 
-      <div class="patient-detail-grid" id="detailFacts"></div>
+      <div class="patient-detail-grid" id="detailFacts" style="display: flex; align-items: flex-end; justify-content: center;"></div>
 
       <div class="patient-detail-section">
         <div class="patient-detail-section-title">Lịch sử khám gần đây</div>
@@ -400,7 +502,7 @@
               <div class="prescription-doctor" id="prescDoctor">Bác sĩ: </div>
             </div>
             <button type="button" class="btn-cancel" onclick="closePrescriptionDetail()">Quay lại</button>
-          </div>
+          </div>  
           <div class="prescription-items" id="prescItems"></div>
           <div class="prescription-note" id="prescNote"></div>
         </div>
@@ -488,21 +590,15 @@
     <h3 data-i18n="doctors_title">BÁC SĨ CỦA CHÚNG TÔI</h3>
     <div class="doctor-row">
         <div class="doctor-card">
-            <img src="" alt="Bác sĩ Nguyễn Văn Toàn">
-            <h4>BS. Nguyễn Văn Toàn</h4>
+            <img src="./img/bacsi.png" style="box-shadow: inset 0 0 10px rgba(0,0,0,0.5);">
+            <h4>BS. Bùi Thái Phương</h4>
             <p data-i18n="doctor_specialty_1">Chuyên khoa: Nội</p>
             <p data-i18n="doctor_work">Làm việc: T2 - T6</p>
         </div>
         <div class="doctor-card">
-            <img src="" alt="Bác sĩ Trần Thị Bích">
-            <h4>BS. Trần Thị Bích</h4>
+            <img src="./img/bacsi.png" style="box-shadow: inset 0 0 10px rgba(0,0,0,0.5);">
+            <h4>BS. Bùi Duy Khang</h4>
             <p data-i18n="doctor_specialty_1">Chuyên khoa: Nhi</p>
-            <p data-i18n="doctor_work">Làm việc: T2 - T6</p>
-        </div>
-        <div class="doctor-card">
-            <img src="" alt="Bác sĩ Lê Thị Cẩm">
-            <h4>BS. Lê Thị Cẩm</h4>
-            <p data-i18n="doctor_specialty_1">Chuyên khoa: Sản</p>
             <p data-i18n="doctor_work">Làm việc: T2 - T6</p>
         </div>
     </div>
@@ -602,7 +698,7 @@
 <div id="chatBubble" onclick="toggleChat()" style="
   position:fixed;bottom:24px;right:24px;
   width:52px;height:52px;border-radius:50%;
-  background:var(--primary,#4a9b8e);color:#fff;
+  background:var(--primary,rgb(97, 168, 255));color:#fff;
   display:flex;align-items:center;justify-content:center;
   cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,0.2);
   z-index:9999;font-size:24px;
@@ -618,12 +714,11 @@
 ">
   <!-- Header -->
   <div style="
-    background:var(--primary,#4a9b8e);color:#fff;
+    background:var(--primary,rgb(97, 168, 255));color:#fff;
     padding:14px 16px;display:flex;
     align-items:center;justify-content:space-between;
   ">
     <div style="display:flex;align-items:center;gap:8px">
-      <span style="font-size:20px">🤖</span>
       <div>
         <div style="font-weight:700;font-size:14px">Trợ lý Y tế AI</div>
         <div style="font-size:11px;opacity:0.85">Luôn sẵn sàng hỗ trợ bạn</div>
@@ -655,13 +750,15 @@
     >
     <button onclick="sendChat()" style="
       width:36px;height:36px;border-radius:50%;
-      border:none;background:var(--primary,#4a9b8e);
+      border:none;background:var(--primary,rgb(97, 168, 255));
       color:#fff;font-size:16px;cursor:pointer;
       display:flex;align-items:center;justify-content:center;
       flex-shrink:0;
     ">➤</button>
   </div>
 </div>
+
+
 
 </footer>
 

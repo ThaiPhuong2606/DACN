@@ -130,8 +130,6 @@ function applyLanguage(lang) {
   }
 }
 
-
-
 async function loadUserProfile(user) {
   const userRef = doc(db, 'users', user.uid);
   let userData = null;
@@ -142,7 +140,6 @@ async function loadUserProfile(user) {
     if (snap.exists()) {
       userData = snap.data();
     } else {
-      // Lần đầu đăng nhập — tạo profile mới với mã bệnh nhân random
       const patientCode = '#BN-' + Math.floor(10000 + Math.random() * 90000);
       userData = {
         name: user.displayName || user.email.split('@')[0],
@@ -150,12 +147,67 @@ async function loadUserProfile(user) {
         phone: 'Chưa cập nhật',
         address: 'Chưa cập nhật',
         patientCode: patientCode,
+        role: 'patient',
+        year: new Date().getFullYear() - 30,
+        gender: 'nam',
+        height: 0,
+        weight: 0,
+        blood: '',
+        insurance: '',
+        allergy: '',
         createdAt: new Date().toISOString(),
       };
       await setDoc(userRef, userData);
     }
 
-    // Cập nhật lên header
+    // Cập nhật member[0] là bản thân từ Firestore
+    members = [{
+      id: 0,
+      name: userData.name || 'Chưa cập nhật',
+      year: userData.year || new Date().getFullYear() - 30,
+      gender: userData.gender || 'nam',
+      rel: 'Bản thân',
+      height: userData.height || 0,
+      weight: userData.weight || 0,
+      blood: userData.blood || '',
+      phone: userData.phone || 'Chưa cập nhật',
+      address: userData.address || 'Chưa cập nhật',
+      patientCode: userData.patientCode || '',
+      self: true,
+      allergy: userData.allergy || '',
+      insurance: userData.insurance || '',
+      history: userData.history || [],
+    }];
+
+    // Load thành viên gia đình từ Firestore
+    const familySnap = await getDocs(
+      collection(db, 'users', user.uid, 'family')
+    );
+    familySnap.forEach((d, idx) => {
+      const f = d.data();
+      members.push({
+        id: idx + 1,
+        firestoreId: d.id,
+        name: f.name || '',
+        year: f.year || 2000,
+        gender: f.gender || 'nam',
+        rel: f.rel || 'Khác',
+        height: f.height || 0,
+        weight: f.weight || 0,
+        blood: f.blood || '',
+        phone: f.phone || '',
+        address: f.address || '',
+        patientCode: f.patientCode || '#BN-' + Math.floor(10000 + Math.random() * 90000),
+        self: false,
+        allergy: f.allergy || '',
+        insurance: f.insurance || '',
+        history: f.history || [],
+      });
+    });
+
+    nextId = members.length;
+
+    // Cập nhật header
     const nameEl = document.getElementById('patientName');
     const metaEl = document.getElementById('patientMeta');
     const codeEl = document.getElementById('patientCode');
@@ -163,7 +215,7 @@ async function loadUserProfile(user) {
     const addressEl = document.getElementById('patientAddress');
 
     if (nameEl) nameEl.textContent = userData.name;
-    if (metaEl) metaEl.textContent = `SĐT: ${userData.phone} · Nhóm máu: Chưa rõ`;
+    if (metaEl) metaEl.textContent = `SĐT: ${userData.phone} · Nhóm máu: ${userData.blood || 'Chưa rõ'}`;
     if (codeEl) codeEl.textContent = userData.patientCode;
     if (addressEl) addressEl.innerHTML = `<i class="ti ti-map-pin" style="font-size:11px"></i> ${userData.address}`;
     if (avatarEl) {
@@ -172,13 +224,22 @@ async function loadUserProfile(user) {
         .map(p => p[0].toUpperCase()).join('');
     }
 
-    // Cập nhật member[0] (Bản thân) với thông tin thật
-    if (members && members.length > 0) {
-      members[0].name = userData.name;
-      members[0].phone = userData.phone;
-      members[0].address = userData.address;
-      members[0].patientCode = userData.patientCode;
-      renderPatients();
+    renderPatients();
+
+    // Kiểm tra role
+    if (userData.role === 'doctor') {
+      const patientPanel = document.getElementById('patientPanel');
+      const doctorPanel = document.getElementById('doctorPanel');
+      if (patientPanel) patientPanel.style.display = 'none';
+      if (doctorPanel) doctorPanel.style.display = 'block';
+      openDoctorModal(userData);
+    } else {
+      const patientHeader = document.getElementById('patientHeader');
+      const mainFlow = document.getElementById('mainFlow');
+      const loginPrompt = document.getElementById('loginPrompt');
+      if (patientHeader) patientHeader.style.display = 'block';
+      if (mainFlow) mainFlow.style.display = 'block';
+      if (loginPrompt) loginPrompt.style.display = 'none';
     }
 
   } catch (err) {
@@ -186,19 +247,48 @@ async function loadUserProfile(user) {
   }
 }
 
+//     // ── KIỂM TRA ROLE ──
+//     if (userData.role === 'doctor') {
+//       // Ẩn patient panel, hiện doctor panel
+//       const patientPanel = document.getElementById('patientPanel');
+//       const doctorPanel = document.getElementById('doctorPanel');
+//       if (patientPanel) patientPanel.style.display = 'none';
+//       if (doctorPanel) doctorPanel.style.display = 'block';
+//       openDoctorModal(userData);
+//     } else {
+//       // Hiện patient panel bình thường
+//       const patientHeader = document.getElementById('patientHeader');
+//       const mainFlow = document.getElementById('mainFlow');
+//       const loginPrompt = document.getElementById('loginPrompt');
+//       if (patientHeader) patientHeader.style.display = 'block';
+//       if (mainFlow) mainFlow.style.display = 'block';
+//       if (loginPrompt) loginPrompt.style.display = 'none';
+//     }
+
+//   } catch (err) {
+//     console.error('Lỗi load profile:', err);
+//   }
+// }
+
 function updateUI(user) {
   const btnLogin = document.querySelector(".login");
-  const mainFlow = document.getElementById("mainFlow");
   const loginPrompt = document.getElementById("loginPrompt");
+  const doctorPanel = document.getElementById("doctorPanel");
+  const patientPanel = document.getElementById("patientPanel");
   const patientHeader = document.getElementById("patientHeader");
+  const mainFlow = document.getElementById("mainFlow");
 
   if (user) {
     btnLogin.style.display = "none";
-    if (mainFlow) mainFlow.style.display = "block";
-    if (loginPrompt) loginPrompt.style.display = "none";
-    if (patientHeader) patientHeader.style.display = "block";
 
-    // Load thông tin user từ Firestore
+    // Reset về trạng thái mặc định, loadUserProfile sẽ tự điều chỉnh
+    if (loginPrompt) loginPrompt.style.display = "none";
+    if (doctorPanel) doctorPanel.style.display = "none";
+    if (patientPanel) patientPanel.style.display = "block";
+    if (patientHeader) patientHeader.style.display = "none";
+    if (mainFlow) mainFlow.style.display = "none";
+
+    // Load profile — tự quyết định hiện doctor hay patient
     loadUserProfile(user);
 
     let userInfo = document.getElementById("user-info");
@@ -220,11 +310,14 @@ function updateUI(user) {
       btn.style.opacity = "0.7";
       await logout();
     });
+
   } else {
     btnLogin.style.display = "block";
-    if (mainFlow) mainFlow.style.display = "none";
     if (loginPrompt) loginPrompt.style.display = "block";
+    if (doctorPanel) doctorPanel.style.display = "none";
+    if (patientPanel) patientPanel.style.display = "block";
     if (patientHeader) patientHeader.style.display = "none";
+    if (mainFlow) mainFlow.style.display = "none";
 
     const userInfo = document.getElementById("user-info");
     if (userInfo) userInfo.remove();
@@ -448,70 +541,8 @@ function init() {
     window._init = init;
 
   /* ── DATA ── */
-  let members = [
-    {
-      id: 0,
-      name: 'Nguyễn Hoàng Nam',
-      year: 1988,
-      gender: 'nam',
-      rel: 'Bản thân',
-      height: 172,
-      weight: 70,
-      blood: 'O+',
-      phone: '0912 xxx 345',
-      address: 'Phường 5, Q.3',
-      patientCode: '#BN-20241',
-      self: true,
-      allergy: 'Không ghi nhận',
-      insurance: 'BHYT hộ gia đình',
-      history: [
-        { date: '12/04/2026', department: 'Nội tổng quát', doctor: 'BS. Lê Quốc Hưng', diagnosis: 'Viêm họng cấp', note: 'Kê thuốc 5 ngày, hẹn tái khám nếu còn sốt.', status: 'Đã hoàn tất' },
-        { date: '08/12/2025', department: 'Xét nghiệm', doctor: 'BS. Phạm Minh Tâm', diagnosis: 'Kiểm tra mỡ máu định kỳ', note: 'Các chỉ số ổn định, tiếp tục chế độ ăn giảm dầu mỡ.', status: 'Theo dõi định kỳ' },
-        { date: '21/08/2025', department: 'Tim mạch', doctor: 'BS. Trần Thanh Phúc', diagnosis: 'Đau ngực cơ năng', note: 'Điện tim bình thường, nghỉ ngơi và giảm caffeine.', status: 'Đã tư vấn' },
-      ],
-    },
-    {
-      id: 1,
-      name: 'Nguyễn Thị Mai',
-      year: 1990,
-      gender: 'nữ',
-      rel: 'Vợ/Chồng',
-      height: 158,
-      weight: 52,
-      blood: 'A+',
-      phone: '0908 xxx 221',
-      address: 'Phường 10, Q.3',
-      patientCode: '#BN-20242',
-      allergy: 'Dị ứng hải sản nhẹ',
-      insurance: 'BHYT doanh nghiệp',
-      history: [
-        { date: '03/05/2026', department: 'Sản phụ khoa', doctor: 'BS. Nguyễn Bích Vân', diagnosis: 'Khám phụ khoa định kỳ', note: 'Kết quả bình thường, tái khám sau 6 tháng.', status: 'Đã hoàn tất' },
-        { date: '17/01/2026', department: 'Da liễu', doctor: 'BS. Võ Thanh Hà', diagnosis: 'Viêm da tiếp xúc', note: 'Bôi thuốc 7 ngày, tránh mỹ phẩm có hương liệu.', status: 'Đã cấp thuốc' },
-        { date: '28/09/2025', department: 'Tiêm chủng', doctor: 'BS. Đinh Thu Trang', diagnosis: 'Nhắc vaccine cúm mùa', note: 'Đã tiêm 1 mũi, theo dõi phản ứng 24 giờ.', status: 'Đã tiêm' },
-      ],
-    },
-    {
-      id: 2,
-      name: 'Nguyễn Minh Khôi',
-      year: 2015,
-      gender: 'nam',
-      rel: 'Con',
-      height: 120,
-      weight: 22,
-      blood: '',
-      phone: 'Liên hệ qua phụ huynh',
-      address: 'Phường 10, Q.3',
-      patientCode: '#BN-20243',
-      allergy: 'Dị ứng bụi nhà',
-      insurance: 'BHYT trẻ em',
-      history: [
-        { date: '14/04/2026', department: 'Nhi khoa', doctor: 'BS. Hồ Gia Bảo', diagnosis: 'Cảm siêu vi', note: 'Uống nhiều nước, nghỉ học 2 ngày.', status: 'Đã hoàn tất' },
-        { date: '02/02/2026', department: 'Tai mũi họng', doctor: 'BS. Phan Tường Vy', diagnosis: 'Viêm mũi dị ứng', note: 'Rửa mũi bằng nước muối sinh lý mỗi ngày.', status: 'Theo dõi tại nhà' },
-        { date: '19/11/2025', department: 'Nhi khoa', doctor: 'BS. Lương Huy Nam', diagnosis: 'Khám dinh dưỡng', note: 'Tăng thêm sữa và bữa phụ buổi chiều.', status: 'Tái khám sau 3 tháng' },
-      ],
-    },
-  ];
-  let nextId = 3;
+  let members = [];
+  let nextId = 0;
  
   const services = [
     { id: 'gp',     icon: '🩺', name: 'Khám tổng quát',   sub: 'Đa khoa' },
@@ -600,15 +631,15 @@ function init() {
   const currentYear = new Date().getFullYear();
 
   const fields = [
-    { label: 'Quan hệ',              key: 'rel',       value: member.rel,                                           editable: false },
-    { label: 'Tuổi',                 key: 'year',      value: `${currentYear - member.year} tuổi`,                  editable: false },
-    { label: 'Giới tính',            key: 'gender',    value: member.gender || 'Chưa cập nhật',                     editable: true, type: 'select', options: ['nam','nữ','khác'] },
+    { label: 'Quan hệ',              key: 'rel',       value: member.rel,                                            editable: false },
+    { label: 'Tuổi',                 key: 'year',      value: String(currentYear - member.year),                     editable: true, type: 'select', options: Array.from({ length: 100 }, (_, i) => String(i + 1)) },
+    { label: 'Giới tính',            key: 'gender',    value: member.gender || '',                                   editable: true, type: 'select', options: ['Nam','Nữ','Khác'] },
     { label: 'Chiều cao / Cân nặng', key: '_hw',       value: `${member.height||'?'} cm / ${member.weight||'?'} kg`, editable: false },
-    { label: 'Nhóm máu',             key: 'blood',     value: member.blood || 'Chưa rõ',                            editable: true, type: 'select', options: ['','A+','A-','B+','B-','AB+','AB-','O+','O-'] },
-    { label: 'Liên hệ',              key: 'phone',     value: member.phone || 'Chưa cập nhật',                      editable: true, type: 'text' },
-    { label: 'Địa chỉ',              key: 'address',   value: member.address || 'Chưa cập nhật',                    editable: true, type: 'text' },
-    { label: 'Bảo hiểm',             key: 'insurance', value: member.insurance || 'Chưa cập nhật',                  editable: true, type: 'text' },
-    { label: 'Dị ứng / Bệnh nền',    key: 'allergy',   value: member.allergy || 'Không ghi nhận',                   editable: true, type: 'text' },
+    { label: 'Nhóm máu',             key: 'blood',     value: member.blood || 'Chưa rõ',                             editable: true, type: 'select', options: ['','A+','A-','B+','B-','AB+','AB-','O+','O-'] },
+    { label: 'Liên hệ',              key: 'phone',     value: member.phone || '',                                    editable: true, type: 'text' },
+    { label: 'Địa chỉ',              key: 'address',   value: member.address || '',                                  editable: true, type: 'text' },
+    { label: 'Bảo hiểm',             key: 'insurance', value: member.insurance || '',                                editable: true, type: 'text' },
+    { label: 'Dị ứng / Bệnh nền',    key: 'allergy',   value: member.allergy || '',                                  editable: true, type: 'text' },
   ];
 
   function cardHTML(f) {
@@ -663,11 +694,11 @@ function init() {
     <div style="display:flex;justify-content:center;margin-top:14px">
       <button onclick="saveAllFacts()" style="
         padding:10px 24px;border-radius:12px;
-        border:none;background:var(--primary,#4a9b8e);color:#fff;
+        border:none;background:rgb(97, 168, 255);color:#fff;
         font-size:14px;font-weight:600;cursor:pointer;
-        display:flex;align-items:center;gap:6px;
+        display:flex;align-items:center;justify-content:center;gap:6px;
       ">
-        <i class="ti ti-device-floppy"></i> Lưu thay đổi
+        <i class="ti ti-device-floppy" style="font-size:16px"; background:rgb(97, 168, 255)></i> Lưu thay đổi
       </button>
     </div>
   `;
@@ -680,23 +711,23 @@ function focusEdit(key) {
 window.focusEdit = focusEdit;
 
   function buildPatientHistory(member) {
-    if (!member.history || !member.history.length) {
-      return '<div class="history-item"><div class="history-note">Chưa có lịch sử khám cho bệnh nhân này.</div></div>';
-    }
-
-    return member.history.map(item => `
-      <div class="history-item">
-        <div class="history-top">
-          <div>
-            <div class="history-title">${escapeHtml(item.department)}</div>
-            <div class="history-date">${escapeHtml(item.date)} · ${escapeHtml(item.doctor)}</div>
-          </div>
-          <span class="history-status">${escapeHtml(item.status)}</span>
-        </div>
-        <div class="history-meta">Chẩn đoán: ${escapeHtml(item.diagnosis)}</div>
-        <div class="history-note">Ghi chú: ${escapeHtml(item.note)}</div>
-      </div>`).join('');
+  if (!member.history || !member.history.length) {
+    return '<div class="history-item"><div class="history-note">Chưa có lịch sử khám cho bệnh nhân này.</div></div>';
   }
+
+  return member.history.map(item => `
+    <div class="history-item">
+      <div class="history-top">
+        <div>
+          <div class="history-title">${escapeHtml(item.department || item.methods?.join(', ') || 'Khám bệnh')}</div>
+          <div class="history-date">${escapeHtml(item.date)} · ${escapeHtml(item.doctor || item.doctorName || 'Bác sĩ')}</div>
+        </div>
+        <span class="history-status">${escapeHtml(item.status || 'Đã hoàn tất')}</span>
+      </div>
+      <div class="history-meta">Chẩn đoán: ${escapeHtml(item.diagnosis || 'Chưa có')}</div>
+      <div class="history-note">Ghi chú: ${escapeHtml(item.note || item.treatmentNote || 'Không có')}</div>
+    </div>`).join('');
+}
 
   function getPrescriptionItemsByDiagnosis(diagnosis) {
     const text = String(diagnosis || '').toLowerCase();
@@ -774,30 +805,93 @@ window.focusEdit = focusEdit;
     `;
   }
 
-  function showPatientTab(tab) {
-    const profilePanel = document.getElementById('patientTabProfile');
-    const prescriptionPanel = document.getElementById('patientTabPrescriptions');
-    document.querySelectorAll('.patient-tab').forEach(btn => {
-      btn.classList.toggle('active', btn.dataset.tab === tab);
-    });
+  async function showPatientTab(tab) {
+  const profilePanel = document.getElementById('patientTabProfile');
+  const prescriptionPanel = document.getElementById('patientTabPrescriptions');
+  document.querySelectorAll('.patient-tab').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.tab === tab);
+  });
 
-    if (tab === 'prescriptions') {
-      if (profilePanel) profilePanel.style.display = 'none';
-      if (prescriptionPanel) prescriptionPanel.style.display = 'block';
-      const member = getSelectedMember();
-      const list = document.getElementById('detailPrescriptions');
-      const support = document.getElementById('prescriptionSupport');
+  if (tab === 'prescriptions') {
+    if (profilePanel) profilePanel.style.display = 'none';
+    if (prescriptionPanel) prescriptionPanel.style.display = 'block';
+
+    const member = getSelectedMember();
+    const list = document.getElementById('detailPrescriptions');
+    const support = document.getElementById('prescriptionSupport');
+
+    if (list) list.innerHTML = '<div class="history-note">Đang tải...</div>';
+
+    // Load toa thuốc từ Firestore
+    try {
+      const userId = auth.currentUser?.uid;
+      const snap = await getDocs(
+        query(collection(db, 'prescriptions'), where('apptId', 'in',
+          await getDocs(query(collection(db, 'appointments'), where('userId', '==', userId)))
+            .then(s => s.docs.map(d => d.id).slice(0, 10))
+        ))
+      );
+
+      const prescriptions = [];
+      snap.forEach(d => prescriptions.push({ id: d.id, ...d.data() }));
+
+      if (list) {
+        if (!prescriptions.length) {
+          list.innerHTML = '<div class="history-item"><div class="history-note">Chưa có toa thuốc.</div></div>';
+        } else {
+          list.innerHTML = prescriptions.map((p, idx) => `
+            <button type="button" class="prescription-item" onclick="showFirestorePrescriptionDetail(${idx}, ${JSON.stringify(p).replace(/"/g, '&quot;')})">
+              <div>
+                <div class="history-title">DT-${String(idx+1).padStart(3,'0')} · ${escapeHtml(p.patientName || '')}</div>
+                <div class="prescription-meta">${escapeHtml(p.createdAt?.toDate?.()?.toLocaleDateString('vi-VN') || '')} · BS. ${escapeHtml(p.doctorName || '')}</div>
+              </div>
+              <span class="history-status">${p.items?.length || 0} thuốc</span>
+            </button>
+          `).join('');
+        }
+      }
+    } catch (err) {
+      console.error('Lỗi load prescriptions:', err);
       if (member && list) list.innerHTML = buildPrescriptionList(member);
-      if (member && support) support.innerHTML = buildPrescriptionSupport(member);
-      closePrescriptionDetail();
-      return;
     }
 
-    if (profilePanel) profilePanel.style.display = 'block';
-    if (prescriptionPanel) prescriptionPanel.style.display = 'none';
+    if (member && support) support.innerHTML = buildPrescriptionSupport(member);
+    closePrescriptionDetail();
+    return;
   }
 
-  function showPrescriptionDetail(index) {
+  if (profilePanel) profilePanel.style.display = 'block';
+  if (prescriptionPanel) prescriptionPanel.style.display = 'none';
+}
+
+function showFirestorePrescriptionDetail(idx, p) {
+  const listEl = document.getElementById('detailPrescriptions');
+  const detailEl = document.getElementById('prescriptionDetail');
+  const dateEl = document.getElementById('prescDate');
+  const doctorEl = document.getElementById('prescDoctor');
+  const itemsEl = document.getElementById('prescItems');
+  const noteEl = document.getElementById('prescNote');
+
+  if (listEl) listEl.style.display = 'none';
+  if (detailEl) detailEl.style.display = 'block';
+  if (dateEl) dateEl.textContent = `Ngày: ${p.createdAt?.toDate?.()?.toLocaleDateString('vi-VN') || ''}`;
+  if (doctorEl) doctorEl.textContent = `Bác sĩ: ${p.doctorName || ''}`;
+  if (itemsEl) {
+    itemsEl.innerHTML = (p.items || []).map(med => `
+      <div class="prescription-item-row">
+        <div>
+          <strong>${escapeHtml(med.name)}</strong><br>
+          <span class="prescription-meta">${escapeHtml(med.usage)}</span>
+        </div>
+        <div>${escapeHtml(med.qty)}</div>
+      </div>
+    `).join('');
+  }
+  if (noteEl) noteEl.textContent = '';
+}
+
+
+function showPrescriptionDetail(index) {
     const member = getSelectedMember();
     if (!member) return;
     const prescriptions = buildPrescriptionsFromHistory(member);
@@ -836,27 +930,85 @@ window.focusEdit = focusEdit;
     if (listEl) listEl.style.display = 'grid';
   }
 
-  function openPatientDetail() {
-    const member = getSelectedMember();
-    if (!member) return;
+  async function openPatientDetail() {
+  const member = getSelectedMember();
+  if (!member) return;
 
-    const avatar = document.getElementById('detailAvatar');
-    const name = document.getElementById('detailName');
-    const code = document.getElementById('detailCode');
-    const facts = document.getElementById('detailFacts');
-    const history = document.getElementById('detailHistory');
-    const modal = document.getElementById('patientDetailModal');
+  const avatar = document.getElementById('detailAvatar');
+  const name = document.getElementById('detailName');
+  const code = document.getElementById('detailCode');
+  const facts = document.getElementById('detailFacts');
+  const history = document.getElementById('detailHistory');
+  const modal = document.getElementById('patientDetailModal');
 
-    if (avatar) avatar.textContent = getInitials(member.name);
-    if (name) name.textContent = member.name;
-    if (code) code.textContent = member.patientCode || '';
-    if (facts) facts.innerHTML = buildPatientFacts(member);
-    if (history) history.innerHTML = buildPatientHistory(member);
-    showPatientTab('profile');
-    if (modal) modal.classList.add('open');
+  if (avatar) avatar.textContent = getInitials(member.name);
+  if (name) name.textContent = member.name;
+  if (code) code.textContent = member.patientCode || '';
+  if (facts) facts.innerHTML = buildPatientFacts(member);
+
+  // Load lịch sử khám từ Firestore
+  if (history) {
+    history.innerHTML = '<div class="history-note">Đang tải...</div>';
+    try {
+      const userId = auth.currentUser?.uid;
+      if (userId) {
+        const q = query(
+          collection(db, 'appointments'),
+          where('userId', '==', userId)
+        );
+        const snap = await getDocs(q);
+        const firestoreHistory = [];
+        snap.forEach(d => {
+          const data = d.data();
+          if (data.status === 'examined' || data.status === 'completed') {
+            firestoreHistory.push({
+              date: data.date || '',
+              doctor: data.doctorName || 'Bác sĩ',
+              department: data.methods ? data.methods.join(', ') : 'Khám bệnh',
+              diagnosis: data.diagnosis || 'Chưa có',
+              note: data.treatmentNote || '',
+              status: data.status === 'completed' ? 'Đã hoàn tất' : 'Đã khám',
+            });
+          }
+        });
+
+        // Gộp với history tĩnh nếu có
+        const allHistory = [...firestoreHistory, ...(member.history || [])];
+        member.history = allHistory;
+        history.innerHTML = buildPatientHistory(member);
+      }
+    } catch (err) {
+      console.error('Lỗi load history:', err);
+      history.innerHTML = buildPatientHistory(member);
+    }
   }
 
-  function closePatientDetail() {
+  showPatientTab('profile');
+  if (modal) modal.classList.add('open');
+}
+
+async function loadPrescriptionsFromFirestore() {
+  const userId = auth.currentUser?.uid;
+  if (!userId) return [];
+
+  try {
+    const q = query(
+      collection(db, 'prescriptions'),
+      where('userId', '==', userId)
+    );
+    const snap = await getDocs(q);
+    const prescriptions = [];
+    snap.forEach(d => {
+      prescriptions.push({ id: d.id, ...d.data() });
+    });
+    return prescriptions;
+  } catch (err) {
+    console.error('Lỗi load prescriptions:', err);
+    return [];
+  }
+}
+
+function closePatientDetail() {
     document.getElementById('patientDetailModal')?.classList.remove('open');
   }
  
@@ -1244,38 +1396,52 @@ async function releaseSlot(slotId) {
     document.getElementById('mRel').value = 'Bố';
     document.getElementById('mBlood').value = '';
   }
-  function saveMember() {
-    const name = document.getElementById('mName').value.trim();
-    const year = parseInt(document.getElementById('mYear').value);
-    if (!name || !year || year < 1920 || year > new Date().getFullYear()) {
-      alert('Vui lòng nhập đúng tên và năm sinh.');
-      return;
-    }
-    members.push({
-      id: nextId++,
-      name,
-      year,
-      gender: document.getElementById('mGender').value,
-      rel:    document.getElementById('mRel').value,
-      height: parseInt(document.getElementById('mHeight').value) || 0,
-      weight: parseInt(document.getElementById('mWeight').value) || 0,
-      blood:  document.getElementById('mBlood').value,
-      phone: 'Chưa cập nhật',
-      address: 'Chưa cập nhật địa chỉ',
-      patientCode: `#BN-${String(nextId + 20240).padStart(5, '0')}`,
-      allergy: document.getElementById('mAllergy').value.trim(),
-    });
-    closeModal();
-    renderPatients();
+  async function saveMember() {
+  const name = document.getElementById('mName').value.trim();
+  const year = parseInt(document.getElementById('mYear').value);
+  if (!name || !year || year < 1920 || year > new Date().getFullYear()) {
+    alert('Vui lòng nhập đúng tên và năm sinh.');
+    return;
   }
- 
-  // Close modal on overlay click
-  document.getElementById('memberModal').addEventListener('click', function(e) {
-    if (e.target === this) closeModal();
-  });
-  document.getElementById('patientDetailModal').addEventListener('click', function(e) {
-    if (e.target === this) closePatientDetail();
-  });
+
+  const newMember = {
+    name,
+    year,
+    gender: document.getElementById('mGender').value,
+    rel: document.getElementById('mRel').value,
+    height: parseInt(document.getElementById('mHeight').value) || 0,
+    weight: parseInt(document.getElementById('mWeight').value) || 0,
+    blood: document.getElementById('mBlood').value,
+    phone: 'Chưa cập nhật',
+    address: 'Chưa cập nhật',
+    patientCode: '#BN-' + Math.floor(10000 + Math.random() * 90000),
+    allergy: document.getElementById('mAllergy').value.trim(),
+    insurance: '',
+    createdAt: new Date().toISOString(),
+  };
+
+  try {
+    if (auth.currentUser) {
+      const docRef = await addDoc(
+        collection(db, 'users', auth.currentUser.uid, 'family'),
+        newMember
+      );
+      members.push({
+        id: nextId++,
+        firestoreId: docRef.id,
+        self: false,
+        history: [],
+        ...newMember,
+      });
+    }
+  } catch (err) {
+    alert('Lỗi lưu thành viên: ' + err.message);
+    return;
+  }
+
+  closeModal();
+  renderPatients();
+}
 
 
   function autoSaveFact(key, value) {
@@ -1283,6 +1449,10 @@ async function releaseSlot(slotId) {
   if (!member) return;
   if (key === 'height' || key === 'weight') {
     member[key] = parseInt(value) || 0;
+  } else if (key === 'year') {
+    // Chọn tuổi → tính ngược lại năm sinh
+    const currentYear = new Date().getFullYear();
+    member[key] = currentYear - parseInt(value);
   } else {
     member[key] = value;
   }
@@ -1294,13 +1464,19 @@ async function saveAllFacts() {
   const member = getSelectedMember();
   if (!member) return;
 
-  const fields = ['gender','height','weight','blood','phone','address','insurance','allergy'];
+  const currentYear = new Date().getFullYear();
+  const fields = ['gender','height','weight','blood','phone','address','insurance','allergy','year'];
   fields.forEach(key => {
     const el = document.getElementById('edit_' + key);
     if (!el) return;
-    member[key] = (key === 'height' || key === 'weight')
-      ? parseInt(el.value) || 0
-      : el.value.trim();
+    if (key === 'height' || key === 'weight') {
+      member[key] = parseInt(el.value) || 0;
+    } else if (key === 'year') {
+      // Chọn tuổi → tính ngược lại năm sinh
+      member[key] = currentYear - (parseInt(el.value) || 0);
+    } else {
+      member[key] = el.value.trim();
+    }
   });
 
   if (member.self && auth.currentUser) {
@@ -1315,6 +1491,7 @@ async function saveAllFacts() {
         height:    member.height,
         weight:    member.weight,
         gender:    member.gender,
+        year:      member.year,
       }, { merge: true });
       alert('Đã lưu thông tin thành công!');
     } catch (err) {
@@ -1355,12 +1532,6 @@ async function saveAllFacts() {
 
   console.log('xong');
 };
-
-renderDates();
-
-if (dates.length > 0) {
-  selectDate(dates[0].iso, dates[0].full);
-}
 
 // ── CHATBOX ──────────────────────────────────────
 const chatHistory = [];
@@ -1515,21 +1686,260 @@ async function sendChat() {
   }
 }
 
-  window.toggleChat = toggleChat;
-  window.sendChat = sendChat;
-  window.selectPatient = selectPatient;
-  window.selectDate = selectDate;
-  window.selectTime = selectTime;
-  window.handleSubmit = handleSubmit;
-  window.openModal = openModal;
-  window.openPatientDetail = openPatientDetail;
-  window.closePatientDetail = closePatientDetail;
-  window.showPatientTab = showPatientTab;
-  window.showPrescriptionDetail = showPrescriptionDetail;
-  window.closePrescriptionDetail = closePrescriptionDetail;
-  window.closeModal = closeModal;
-  window.saveMember = saveMember;
-  window.resetAll = resetAll;
-  window.autoSaveFact = autoSaveFact;
-  window.saveAllFacts = saveAllFacts;
-  renderAll();
+  // ── DOCTOR PORTAL ─────────────────────────────
+let currentDoctorData = null;
+let selectedPatientAppointment = null;
+let currentMedicineType = 'tay';
+
+const METHODS = {
+  tay: ['Tiểu phẫu','Băng bó vết thương','Thay băng gạc','Tiêm truyền','Đo huyết áp','Xét nghiệm máu','Siêu âm','Điện tim (ECG)'],
+  dong: ['Châm cứu','Bấm huyệt','Cạo gió','Giác hơi','Xoa bóp','Bốc thuốc thang','Ngâm chân thảo dược','Dưỡng sinh'],
+};
+
+function openDoctorModal(userData) {
+  currentDoctorData = userData;
+
+  // Ẩn panel bệnh nhân, hiện panel bác sĩ
+  const patientPanel = document.getElementById('patientPanel');
+  const doctorPanel = document.getElementById('doctorPanel');
+  if (patientPanel) patientPanel.style.display = 'none';
+  if (doctorPanel) doctorPanel.style.display = 'block';
+
+  // Cập nhật thông tin bác sĩ
+  const avatar = document.getElementById('doctorAvatar');
+  const name = document.getElementById('doctorPanelName');
+  const email = document.getElementById('doctorPanelEmail');
+  if (avatar) avatar.textContent = userData.name.trim().split(/\s+/).slice(-2).map(p => p[0].toUpperCase()).join('');
+  if (name) name.textContent = 'BS. ' + userData.name;
+  if (email) email.textContent = userData.email;
+
+  setMedicine('tay');
+  loadTodayQueue();
+}
+
+async function loadTodayQueue() {
+  const today = new Date().toISOString().split('T')[0];
+  const q = query(
+    collection(db, 'appointments'),
+    where('date', '==', today),
+    where('status', '==', 'confirmed')
+  );
+
+  const snap = await getDocs(q);
+  const appointments = [];
+  snap.forEach(d => appointments.push({ id: d.id, ...d.data() }));
+
+  // Sắp xếp: ưu tiên người già (năm sinh nhỏ) lên đầu
+  appointments.sort((a, b) => (a.time > b.time ? 1 : -1));
+
+  const list = document.getElementById('queueList');
+  if (!appointments.length) {
+    list.innerHTML = '<div style="text-align:center;color:#999;padding:20px">Chưa có bệnh nhân hôm nay</div>';
+    return;
+  }
+
+  list.innerHTML = appointments.map((ap, idx) => `
+    <div style="
+      background:#f8f9fa;border-radius:12px;padding:12px;
+      margin-bottom:8px;display:flex;align-items:center;
+      justify-content:space-between;
+    ">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="
+          width:32px;height:32px;border-radius:50%;
+          background:#4a9b8e;color:#fff;
+          display:flex;align-items:center;justify-content:center;
+          font-weight:700;font-size:13px;
+        ">${idx + 1}</div>
+        <div>
+          <div style="font-weight:600;color:#1a3a5c;font-size:14px">${ap.patientName}</div>
+          <div style="font-size:12px;color:#7a8fa6">${ap.time} · ${ap.symptoms || 'Không có triệu chứng'}</div>
+        </div>
+      </div>
+      <button onclick="selectPatientForExam('${ap.id}','${ap.patientName}','${ap.symptoms || ''}','${ap.userId || ''}')" style="
+          padding:6px 12px;border-radius:8px;border:none;
+          background:#4a9b8e;color:#fff;font-size:12px;cursor:pointer;
+        ">Khám</button>
+  `).join('');
+}
+
+function selectPatientForExam(apptId, name, symptoms, userId) {
+  selectedPatientAppointment = { apptId, name, symptoms, userId };
+
+  document.getElementById('currentPatientInfo').innerHTML = `
+    <strong>${name}</strong><br>
+    <span style="color:#7a8fa6;font-size:12px">Triệu chứng: ${symptoms || 'Không có'}</span>
+  `;
+  document.getElementById('prescPatientInfo').innerHTML = `
+    <strong>${name}</strong>
+  `;
+
+  switchDoctorTab('examine');
+}
+
+function setMedicine(type) {
+  currentMedicineType = type;
+  document.getElementById('btn_tay').style.background = type === 'tay' ? '#60A5FA' : '#fff';
+  document.getElementById('btn_tay').style.color = type === 'tay' ? '#fff' : '#60A5FA';
+  document.getElementById('btn_tay').style.borderColor = type === 'tay' ? '#60A5FA' : '#e0e0e0';
+  document.getElementById('btn_dong').style.background = type === 'dong' ? '#60A5FA' : '#fff';
+  document.getElementById('btn_dong').style.color = type === 'dong' ? '#fff' : '#60A5FA';
+  document.getElementById('btn_dong').style.borderColor = type === 'dong' ? '#60A5FA' : '#e0e0e0';
+
+  document.getElementById('methodList').innerHTML = METHODS[type].map(m => `
+    <label style="
+      display:flex;align-items:center;gap:8px;
+      background:#f8f9fa;border-radius:10px;padding:10px;
+      cursor:pointer;font-size:13px;
+    ">
+      <input type="checkbox" value="${m}" style="width:16px;height:16px;accent-color:#60A5FA">
+      ${m}
+    </label>
+  `).join('');
+}
+
+async function saveTreatment() {
+  if (!selectedPatientAppointment) {
+    alert('Vui lòng chọn bệnh nhân từ hàng chờ.');
+    return;
+  }
+
+  const methods = [...document.querySelectorAll('#methodList input:checked')].map(el => el.value);
+  const diagnosis = document.getElementById('diagnosisInput').value.trim();
+  const note = document.getElementById('treatmentNote').value.trim();
+
+  if (!diagnosis) { alert('Vui lòng nhập chẩn đoán.'); return; }
+
+  try {
+    await setDoc(doc(db, 'appointments', selectedPatientAppointment.apptId), {
+      diagnosis,
+      treatmentNote: note,
+      methods,
+      medicineType: currentMedicineType,
+      status: 'examined',
+      examinedAt: serverTimestamp(),
+    }, { merge: true });
+
+    alert('Đã lưu kết quả khám!');
+    switchDoctorTab('prescription');
+  } catch (err) {
+    alert('Lỗi: ' + err.message);
+  }
+}
+
+function addPrescriptionRow() {
+  const container = document.getElementById('prescriptionItems');
+  const idx = container.children.length;
+  const row = document.createElement('div');
+  row.style.cssText = 'display:grid;grid-template-columns:2fr 1fr 1fr auto;gap:6px;align-items:center';
+  row.innerHTML = `
+    <input placeholder="Tên thuốc..." style="padding:8px;border-radius:8px;border:1.5px solid #e0e0e0;font-size:13px">
+    <input placeholder="Số lượng" style="padding:8px;border-radius:8px;border:1.5px solid #e0e0e0;font-size:13px">
+    <input placeholder="Cách dùng..." style="padding:8px;border-radius:8px;border:1.5px solid #e0e0e0;font-size:13px">
+    <button onclick="this.parentElement.remove()" style="
+      width:30px;height:30px;border-radius:50%;border:none;
+      background:#fee;color:#e55;cursor:pointer;font-size:16px;
+    ">✕</button>
+  `;
+  container.appendChild(row);
+}
+
+async function savePrescription() {
+  if (!selectedPatientAppointment) {
+    alert('Vui lòng chọn bệnh nhân từ hàng chờ.');
+    return;
+  }
+
+  const rows = document.querySelectorAll('#prescriptionItems > div');
+  const items = [...rows].map(row => {
+    const inputs = row.querySelectorAll('input');
+    return {
+      name: inputs[0].value.trim(),
+      qty: inputs[1].value.trim(),
+      usage: inputs[2].value.trim(),
+    };
+  }).filter(item => item.name);
+
+  if (!items.length) { alert('Vui lòng thêm ít nhất 1 thuốc.'); return; }
+
+  try {
+    await addDoc(collection(db, 'prescriptions'), {
+      apptId: selectedPatientAppointment.apptId,
+      userId: selectedPatientAppointment.userId,  // ← THÊM
+      patientName: selectedPatientAppointment.name,
+      doctorName: currentDoctorData.name,
+      items,
+      createdAt: serverTimestamp(),
+    });
+
+    await setDoc(doc(db, 'appointments', selectedPatientAppointment.apptId), {
+      status: 'completed',
+    }, { merge: true });
+
+    alert('Đã lưu toa thuốc thành công!');
+    document.getElementById('prescriptionItems').innerHTML = '';
+    selectedPatientAppointment = null;
+    switchDoctorTab('queue');
+    loadTodayQueue();
+  } catch (err) {
+    alert('Lỗi: ' + err.message);
+  }
+}
+
+async function switchDoctorTab(tab) {
+  ['queue','examine','prescription'].forEach(t => {
+    const el = document.getElementById('docTab_' + t);
+    if (el) el.style.display = t === tab ? 'block' : 'none';
+  });
+  document.querySelectorAll('.doc-tab').forEach(btn => {
+    const isActive = btn.dataset.tab === tab;
+    btn.style.background = isActive ? 'rgba(96, 165, 250, 0.16)' : '#f5f5f5';
+    btn.style.color = isActive ? '#2563EB' : '#666';
+    btn.style.boxShadow = isActive ? '0 0 0 1px rgba(96, 165, 250, 0.22) inset' : 'none';
+  });
+}
+
+function closeDoctorModal() {
+  const doctorPanel = document.getElementById('doctorPanel');
+  const patientPanel = document.getElementById('patientPanel');
+  if (doctorPanel) doctorPanel.style.display = 'none';
+  if (patientPanel) patientPanel.style.display = 'block';
+}
+
+window.showFirestorePrescriptionDetail = showFirestorePrescriptionDetail;
+window.switchDoctorTab = switchDoctorTab;
+window.openDoctorModal = openDoctorModal;
+window.closeDoctorModal = closeDoctorModal;
+window.setMedicine = setMedicine;
+window.selectPatientForExam = selectPatientForExam;
+window.saveTreatment = saveTreatment;
+window.addPrescriptionRow = addPrescriptionRow;
+window.savePrescription = savePrescription;
+window.toggleChat = toggleChat;
+window.sendChat = sendChat;
+window.selectPatient = selectPatient;
+window.selectDate = selectDate;
+window.selectTime = selectTime;
+window.handleSubmit = handleSubmit;
+window.openModal = openModal;
+window.openPatientDetail = openPatientDetail;
+window.closePatientDetail = closePatientDetail;
+window.showPatientTab = showPatientTab;
+window.showPrescriptionDetail = showPrescriptionDetail;
+window.closePrescriptionDetail = closePrescriptionDetail;
+window.closeModal = closeModal;
+window.saveMember = saveMember;
+window.resetAll = resetAll;
+window.autoSaveFact = autoSaveFact;
+window.saveAllFacts = saveAllFacts;
+window.focusEdit = focusEdit;
+
+// Render sau khi đã gán window
+renderPatients();
+updatePatientHeader();
+renderDates();
+if (dates.length > 0) {
+  selectDate(dates[0].iso, dates[0].full);
+}
+
+updatePatientHeader();
