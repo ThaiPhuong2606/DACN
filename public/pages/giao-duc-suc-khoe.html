@@ -6,14 +6,15 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Giáo dục sức khỏe - Trạm Y Tế Phường 10</title>
 <link rel="stylesheet" href="../style.css">
+<link rel="stylesheet" href="giao-duc-suc-khoe.css">
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet">
 </head>
 
-<body>
+<body class="page-gdsk">
 <div class="topbar">
     <span id="time"></span>
     <div class="search-box">
-        <input class="search" type="text" placeholder="Từ khóa tìm kiếm" />
+    <input class="search" type="text" placeholder="Từ khóa tìm kiếm" data-gdsk-search />
         <i class="material-symbols-outlined">search</i>
     </div>
     
@@ -37,8 +38,8 @@
     <a href="gioi-thieu.html" class="menu_about">GIỚI THIỆU</a>
     <a href="tiem-chung.html" class="menu_vaccine">TIÊM CHỦNG</a>
     <a href="giao-duc-suc-khoe.html" class="menu_health">GIÁO DỤC SỨC KHỎE</a>
-    <a href="phong-chong-dich-benh.html" class="menu_disease">PHÒNG CHỐNG DỊCH BỆNH</a>
-    <a href="cham-soc-tre-em.html" class="menu_child">CHĂM SÓC TRẺ EM</a>
+    <a href="phong-chong-dich-benh/phong-chong-dich-benh.html" class="menu_disease">PHÒNG CHỐNG DỊCH BỆNH</a>
+    <a href="cham-soc-tre-em/cham-soc-tre-em.html" class="menu_child">CHĂM SÓC TRẺ EM</a>
 
     <div class="lang">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 36 36" width="24" height="24" style="opacity:1;"><path fill="#da251d" d="M32 5H4a4 4 0 0 0-4 4v18a4 4 0 0 0 4 4h28a4 4 0 0 0 4-4V9a4 4 0 0 0-4-4"/><path fill="#ff0" d="M19.753 16.037L18 10.642l-1.753 5.395h-5.672l4.589 3.333l-1.753 5.395L18 21.431l4.589 3.334l-1.753-5.395l4.589-3.333z"/></svg>
@@ -48,63 +49,147 @@
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 36 36" width="24" height="24" style="opacity:1;"><path fill="#00247d" d="M0 9.059V13h5.628zM4.664 31H13v-5.837zM23 25.164V31h8.335zM0 23v3.941L5.63 23zM31.337 5H23v5.837zM36 26.942V23h-5.631zM36 13V9.059L30.371 13zM13 5H4.664L13 10.837z"/><path fill="#cf1b2b" d="m25.14 23l9.712 6.801a4 4 0 0 0 .99-1.749L28.627 23zM13 23h-2.141l-9.711 6.8c.521.53 1.189.909 1.938 1.085L13 23.943zm10-10h2.141l9.711-6.8a4 4 0 0 0-1.937-1.085L23 12.057zm-12.141 0L1.148 6.2a4 4 0 0 0-.991 1.749L7.372 13z"/><path fill="#eee" d="M36 21H21v10h2v-5.836L31.335 31H32a4 4 0 0 0 2.852-1.199L25.14 23h3.487l7.215 5.052c.093-.337.158-.686.158-1.052v-.058L30.369 23H36zM0 21v2h5.63L0 26.941V27c0 1.091.439 2.078 1.148 2.8l9.711-6.8H13v.943l-9.914 6.941c.294.07.598.116.914.116h.664L13 25.163V31h2V21zM36 9a3.98 3.98 0 0 0-1.148-2.8L25.141 13H23v-.943l9.915-6.942A4 4 0 0 0 32 5h-.663L23 10.837V5h-2v10h15v-2h-5.629L36 9.059zM13 5v5.837L4.664 5H4 a4 4 0 0 0-2.852 1.2l9.711 6.8H7.372L.157 7.949A4 4 0 0 0 0 9v.059L5.628 13H0v2h15V5z"/><path fill="#cf1b2b" d="M21 15V5h-6v10H0v6h15v10h6V21h15v-6z"/></svg>
     </div>
 </nav>
-<div class="container-gdsk">
- 
-    <div class="header-bar">
-      <div class="tag">Giáo dục sức khỏe &nbsp;·&nbsp; TYT phường Gò Vấp &nbsp;·&nbsp; 4/2/2026</div>
-      <h1>Ngày thế giới phòng chống ung thư 4/2 — Các biện pháp phòng tránh và giảm nguy cơ mắc ung thư</h1>
-      <span class="badge">✦ 9 biện pháp khuyến nghị</span>
-    </div>
- 
-    <div class="section-title">Lối sống &amp; dinh dưỡng</div>
-    <div class="grid">
-      <div class="card">
-        <div class="card-icon teal-light">🥗</div>
-        <div class="card-label">Thực hiện chế độ ăn uống lành mạnh</div>
+<main class="container-gdsk">
+    <section class="gdsk-hero">
+      <div class="gdsk-hero__copy">
+        <div class="tag">Giáo dục sức khỏe · TYT phường Gò Vấp · 4/2/2026</div>
+        <h1>Ngày thế giới phòng chống ung thư 4/2</h1>
+        <p class="gdsk-lead">Những thay đổi nhỏ trong lối sống, môi trường sống và thói quen tầm soát có thể giúp giảm nguy cơ mắc ung thư một cách bền vững.</p>
+        <div class="gdsk-actions">
+          <button class="gdsk-filter is-active" type="button" data-filter="all">Tất cả</button>
+          <button class="gdsk-filter" type="button" data-filter="song">Lối sống</button>
+          <button class="gdsk-filter" type="button" data-filter="moi-truong">Môi trường</button>
+          <button class="gdsk-filter" type="button" data-filter="tam-soat">Tầm soát</button>
+        </div>
       </div>
-      <div class="card">
-        <div class="card-icon green-light">🏃</div>
-        <div class="card-label">Tích cực hoạt động thể lực</div>
+      <div class="gdsk-hero__stats">
+        <article class="stat-card">
+          <strong>9</strong>
+          <span>Khuyến nghị trọng tâm</span>
+        </article>
+        <article class="stat-card">
+          <strong>3</strong>
+          <span>Nhóm nội dung chính</span>
+        </article>
+        <article class="stat-card">
+          <strong>1 phút</strong>
+          <span>Để xem nhanh các điểm chính</span>
+        </article>
       </div>
-      <div class="card">
-        <div class="card-icon amber-light">🚭</div>
-        <div class="card-label">Không hút thuốc lá hoặc sử dụng thuốc lá dưới bất kỳ hình thức nào</div>
-      </div>
-      <div class="card">
-        <div class="card-icon coral-light">🍺</div>
-        <div class="card-label">Hạn chế uống rượu, bia</div>
-      </div>
-    </div>
- 
-    <div class="section-title">Môi trường &amp; bảo vệ bản thân</div>
-    <div class="grid">
-      <div class="card">
-        <div class="card-icon blue-light">🏠</div>
-        <div class="card-label">Giảm ô nhiễm không khí trong và ngoài nhà</div>
-      </div>
-      <div class="card">
-        <div class="card-icon amber-light">☀️</div>
-        <div class="card-label">Tránh tiếp xúc quá nhiều với nắng, dùng kem chống nắng</div>
-      </div>
-    </div>
- 
-    <div class="section-title">Phòng ngừa &amp; tầm soát</div>
-    <div class="grid">
-      <div class="card">
-        <div class="card-icon purple-light">🔬</div>
-        <div class="card-label">Tham gia sàng lọc ung thư định kỳ theo khuyến cáo</div>
-      </div>
-      <div class="card">
-        <div class="card-icon pink-light">💉</div>
-        <div class="card-label">Cho trẻ tiêm vắc xin phòng viêm gan B và ung thư cổ tử cung</div>
-      </div>
-      <div class="card">
-        <div class="card-icon teal-light">🤱</div>
-        <div class="card-label">Cho con bú giúp giảm nguy cơ ung thư ở mẹ</div>
-      </div>
-      </div>
+    </section>
 
-    </div>
+    <section class="gdsk-panel" data-category="song">
+      <div class="section-title">Lối sống &amp; dinh dưỡng</div>
+      <div class="grid gdsk-grid">
+        <details class="card gdsk-card" data-category="song">
+          <summary>
+            <div class="card-icon teal-light">🥗</div>
+            <div class="gdsk-card__text">
+              <div class="card-label">Thực hiện chế độ ăn uống lành mạnh</div>
+              <p>Ưu tiên rau, trái cây, ngũ cốc nguyên hạt và hạn chế đồ chế biến sẵn.</p>
+            </div>
+          </summary>
+          <div class="gdsk-card__body">Một chế độ ăn đa dạng, ít muối, ít đường và hạn chế thịt chế biến có thể giúp cơ thể kiểm soát cân nặng tốt hơn và giảm một số yếu tố nguy cơ dài hạn.</div>
+        </details>
+        <details class="card gdsk-card" data-category="song">
+          <summary>
+            <div class="card-icon green-light">🏃</div>
+            <div class="gdsk-card__text">
+              <div class="card-label">Tích cực hoạt động thể lực</div>
+              <p>Duy trì vận động đều đặn để hỗ trợ tim mạch, cân nặng và miễn dịch.</p>
+            </div>
+          </summary>
+          <div class="gdsk-card__body">Bạn có thể bắt đầu bằng đi bộ nhanh, đạp xe, tập nhẹ tại nhà hoặc bất kỳ hoạt động nào duy trì được đều đặn.</div>
+        </details>
+        <details class="card gdsk-card" data-category="song">
+          <summary>
+            <div class="card-icon amber-light">🚭</div>
+            <div class="gdsk-card__text">
+              <div class="card-label">Không hút thuốc lá hoặc sử dụng thuốc lá dưới bất kỳ hình thức nào</div>
+              <p>Khói thuốc liên quan tới nhiều loại ung thư và bệnh mạn tính khác.</p>
+            </div>
+          </summary>
+          <div class="gdsk-card__body">Tránh hút thuốc chủ động và thụ động là một trong những biện pháp giảm nguy cơ quan trọng nhất, đặc biệt với phổi, họng và khoang miệng.</div>
+        </details>
+        <details class="card gdsk-card" data-category="song">
+          <summary>
+            <div class="card-icon coral-light">🍺</div>
+            <div class="gdsk-card__text">
+              <div class="card-label">Hạn chế uống rượu, bia</div>
+              <p>Giảm lượng cồn giúp bảo vệ gan và hạn chế nhiều nguy cơ sức khỏe.</p>
+            </div>
+          </summary>
+          <div class="gdsk-card__body">Nếu có sử dụng, hãy giữ ở mức thấp nhất có thể hoặc trao đổi với nhân viên y tế để được tư vấn phù hợp.</div>
+        </details>
+      </div>
+    </section>
+
+    <section class="gdsk-panel" data-category="moi-truong">
+      <div class="section-title">Môi trường &amp; bảo vệ bản thân</div>
+      <div class="grid gdsk-grid">
+        <details class="card gdsk-card" data-category="moi-truong">
+          <summary>
+            <div class="card-icon blue-light">🏠</div>
+            <div class="gdsk-card__text">
+              <div class="card-label">Giảm ô nhiễm không khí trong và ngoài nhà</div>
+              <p>Giữ không gian sống thông thoáng và giảm tiếp xúc khói bụi.</p>
+            </div>
+          </summary>
+          <div class="gdsk-card__body">Hạn chế đốt than, khói bếp, khói nhang dày đặc; ưu tiên thông gió và vệ sinh không khí trong nhà khi có thể.</div>
+        </details>
+        <details class="card gdsk-card" data-category="moi-truong">
+          <summary>
+            <div class="card-icon amber-light">☀️</div>
+            <div class="gdsk-card__text">
+              <div class="card-label">Tránh tiếp xúc quá nhiều với nắng, dùng kem chống nắng</div>
+              <p>Bảo vệ da khi ra ngoài, nhất là trong khung giờ nắng gắt.</p>
+            </div>
+          </summary>
+          <div class="gdsk-card__body">Kết hợp mũ rộng vành, áo dài tay, kính râm và kem chống nắng để giảm tác động của tia UV lên da.</div>
+        </details>
+      </div>
+    </section>
+
+    <section class="gdsk-panel" data-category="tam-soat">
+      <div class="section-title">Phòng ngừa &amp; tầm soát</div>
+      <div class="grid gdsk-grid">
+        <details class="card gdsk-card" data-category="tam-soat">
+          <summary>
+            <div class="card-icon purple-light">🔬</div>
+            <div class="gdsk-card__text">
+              <div class="card-label">Tham gia sàng lọc ung thư định kỳ theo khuyến cáo</div>
+              <p>Chủ động kiểm tra đúng mốc tuổi và yếu tố nguy cơ.</p>
+            </div>
+          </summary>
+          <div class="gdsk-card__body">Các xét nghiệm hoặc tầm soát định kỳ giúp phát hiện bất thường sớm, tăng cơ hội điều trị hiệu quả và ít xâm lấn hơn.</div>
+        </details>
+        <details class="card gdsk-card" data-category="tam-soat">
+          <summary>
+            <div class="card-icon pink-light">💉</div>
+            <div class="gdsk-card__text">
+              <div class="card-label">Cho trẻ tiêm vắc xin phòng viêm gan B và ung thư cổ tử cung</div>
+              <p>Tiêm chủng đúng lịch là cách phòng bệnh chủ động và lâu dài.</p>
+            </div>
+          </summary>
+          <div class="gdsk-card__body">Tiêm vắc xin giúp giảm nguy cơ nhiễm một số tác nhân liên quan đến ung thư, đặc biệt là viêm gan B và HPV.</div>
+        </details>
+        <details class="card gdsk-card" data-category="tam-soat">
+          <summary>
+            <div class="card-icon teal-light">🤱</div>
+            <div class="gdsk-card__text">
+              <div class="card-label">Cho con bú giúp giảm nguy cơ ung thư ở mẹ</div>
+              <p>Lợi ích kép cho cả mẹ và bé trong giai đoạn đầu đời.</p>
+            </div>
+          </summary>
+          <div class="gdsk-card__body">Nuôi con bằng sữa mẹ mang lại nhiều lợi ích sức khỏe; đồng thời có thể góp phần giảm nguy cơ ung thư vú và ung thư buồng trứng ở mẹ.</div>
+        </details>
+      </div>
+    </section>
+
+    <section class="gdsk-note">
+      <strong>Gợi ý nhanh:</strong> bấm vào từng thẻ để xem thêm nội dung, hoặc dùng nút lọc để chỉ xem một nhóm khuyến nghị.
+    </section>
+</main>
 
 <hr class="divider">
 
@@ -133,6 +218,7 @@
 
 <script type="module" src="../app.js"></script>
 <script type="module" src="../script-pages.js"></script>
+<script type="module" src="./giao-duc-suc-khoe.js"></script>
 
 </body>
 </html>

@@ -5,7 +5,7 @@ const diseaseContent = {
     intro:
       "Sốt xuất huyết là bệnh truyền nhiễm do virus Dengue gây ra, lây qua muỗi vằn. Bệnh có thể diễn tiến nhanh nếu không theo dõi sát.",
     image:
-      "https://images.unsplash.com/photo-1584036561584-b03c19da874c?q=80&w=1400&auto=format&fit=crop",
+      "https://www.startpage.com/av/proxy-image?piurl=https%3A%2F%2Ftse1.explicit.bing.net%2Fth%2Fid%2FOIP.34kfkceVDMO9e60qsFQWMAHaEo%3Fpid%3DApi&sp=1781531388T472f2f5ed1398c00ed813d991fd39674edccd6ac0848fefeb99878705434de71",
     symptoms: [
       "Sốt cao đột ngột 39-40 độ C kéo dài.",
       "Đau đầu, đau sau hốc mắt, đau mỏi cơ khớp.",
