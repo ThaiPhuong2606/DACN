@@ -241,27 +241,45 @@
     </div>
 
     <!-- Tab: Toa thuốc -->
-    <div id="docTab_prescription" class="card" style="display:none;padding:14px">
-      <div class="section-title" style="color:grey">Toa thuốc</div>
+<div id="docTab_prescription" class="card" style="display:none;padding:14px">
+  <div class="section-title" style="color:grey">Toa thuốc</div>
 
-      <div id="prescPatientInfo" style="
-        background:#f0f2f7;border-radius:10px;padding:10px;
-        font-size:13px;color:#1a3a5c;margin-bottom:12px;
-      ">Chưa chọn bệnh nhân</div>
+  <div id="prescPatientInfo" style="
+    background:#f0f2f7;border-radius:10px;padding:10px;
+    font-size:13px;color:#1a3a5c;margin-bottom:12px;
+  ">Chưa chọn bệnh nhân</div>
 
-      <div id="prescriptionItems" style="display:flex;flex-direction:column;gap:6px;margin-bottom:10px"></div>
+  <!-- Tìm kiếm thuốc -->
+  <div style="position:relative;margin-bottom:10px">
+    <input id="drugSearchInput" type="text" placeholder="🔍 Tìm tên thuốc..."
+      oninput="searchDrug(this.value)"
+      style="
+        width:100%;padding:8px 12px;border-radius:8px;
+        border:1.5px solid #60A5FA;font-size:13px;
+        box-sizing:border-box;outline:none;
+      "
+    >
+    <div id="drugSuggestions" style="
+      display:none;position:absolute;top:36px;left:0;right:0;
+      background:#fff;border:1.5px solid #e0e0e0;border-radius:8px;
+      max-height:180px;overflow-y:auto;z-index:100;
+      box-shadow:0 4px 12px rgba(0,0,0,0.1);
+    "></div>
+  </div>
 
-      <button onclick="addPrescriptionRow()" style="
-        width:100%;padding:8px;border-radius:8px;
-        border:2px dashed #60A5FA;background:#fff;
-        color:#60A5FA;font-size:13px;font-weight:600;cursor:pointer;margin-bottom:10px;
-      ">+ Thêm thuốc</button>
+  <div id="prescriptionItems" style="display:flex;flex-direction:column;gap:6px;margin-bottom:10px"></div>
 
-      <button onclick="savePrescription()" style="
-        width:100%;padding:10px;border-radius:10px;border:none;
-        background:#60A5FA;color:#fff;font-size:13px;font-weight:600;cursor:pointer;
-      ">Lưu toa thuốc</button>
-    </div>
+  <button onclick="addPrescriptionRow()" style="
+    width:100%;padding:8px;border-radius:8px;
+    border:2px dashed #60A5FA;background:#fff;
+    color:#60A5FA;font-size:13px;font-weight:600;cursor:pointer;margin-bottom:10px;
+  ">+ Thêm thuốc thủ công</button>
+
+  <button onclick="savePrescription()" style="
+    width:100%;padding:10px;border-radius:10px;border:none;
+    background:#60A5FA;color:#fff;font-size:13px;font-weight:600;cursor:pointer;
+  ">Lưu toa thuốc</button>
+</div>
 
   </div>
   <!-- END DOCTOR PANEL -->
@@ -311,6 +329,25 @@
           Khung giờ khám
         </div>
         <div class="time-grid" id="timeGrid"></div>
+      </div>
+
+       <!-- CHỌN PHƯƠNG PHÁP -->
+      <div class="card">
+        <div class="section-title" style="margin-bottom:0px">
+          Chọn phương pháp khám
+        </div>
+        <div style="display:flex;gap:6px;margin-top:8px">
+          <button onclick="selectMethod('tây y')" id="method_station" style="
+            flex:1;padding:8px;border-radius:8px;
+            border:2px solid #60A5FA;background:#60A5FA;
+            color:#fff;font-weight:600;cursor:pointer;font-size:12px;
+          ">Tây Y</button>
+          <button onclick="selectMethod('đông y')" id="method_home" style="
+            flex:1;padding:8px;border-radius:8px;
+            border:2px solid #60A5FA;background:#fff;
+            color:#60A5FA;font-weight:600;cursor:pointer;font-size:12px;
+          ">Đông Y</button>
+        </div>
       </div>
 
       <!-- GHI CHÚ -->
@@ -513,15 +550,6 @@
   </div>
 </div>
 </aside>
-
-<!-- NOTICE -->
-<!-- <div class="notice">
-    <h3 data-i18n="notice_title">THÔNG BÁO</h3>
-    <ul>
-        <li data-i18n="notice_1">LỊCH TIÊM CHỦNG NĂM 2024</li>
-    </ul>
-</div>
-</div> -->
 
 <!-- MAIN CONTENT -->
 <div class="content">
