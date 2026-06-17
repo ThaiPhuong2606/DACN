@@ -183,10 +183,11 @@ async function loadUserProfile(user) {
     const familySnap = await getDocs(
       collection(db, 'users', user.uid, 'family')
     );
-    familySnap.forEach((d, idx) => {
+    nextId = 1; 
+    familySnap.forEach((d) => {
       const f = d.data();
       members.push({
-        id: idx + 1,
+        id: nextId++,
         firestoreId: d.id,
         name: f.name || '',
         year: f.year || 2000,
@@ -204,8 +205,6 @@ async function loadUserProfile(user) {
         history: f.history || [],
       });
     });
-
-    nextId = members.length;
 
     // Cập nhật header
     const nameEl = document.getElementById('patientName');
@@ -559,6 +558,7 @@ function init() {
   let confirmed = false;
   let slotStatusMap = {};
   let unsubscribeSlots = null;
+  let selectedMethod = 'tay';
  
   /* ── HELPERS ── */
   function getDays() {
@@ -1181,7 +1181,18 @@ function renderDates() {
 }
  
   /* ── SELECTION HANDLERS ── */
-  function selectPatient(id) { sel.patient = id; renderPatients(); updatePatientHeader(); updateSummary(); }
+  function selectPatient(id) {
+  sel.patient = id;
+  // Kiểm tra member có tồn tại không
+  const member = members.find(x => x.id === id);
+  if (!member) {
+    console.warn('Không tìm thấy member với id:', id, 'Members hiện tại:', members.map(m => m.id));
+    return;
+  }
+  renderPatients();
+  updatePatientHeader();
+  updateSummary();
+}
   async function selectTime(t) {
   if (!auth.currentUser) {
     alert('Vui lòng đăng nhập để đặt lịch.');
@@ -1349,6 +1360,7 @@ async function releaseSlot(slotId) {
       date: sel.date,
       time: sel.time,
       symptoms: document.getElementById('noteInput')?.value.trim() || '',
+      medicineType: selectedMethod || 'tay',
       status: 'confirmed',
       bookedAt: serverTimestamp(),
     });
@@ -1699,13 +1711,11 @@ const METHODS = {
 function openDoctorModal(userData) {
   currentDoctorData = userData;
 
-  // Ẩn panel bệnh nhân, hiện panel bác sĩ
   const patientPanel = document.getElementById('patientPanel');
   const doctorPanel = document.getElementById('doctorPanel');
   if (patientPanel) patientPanel.style.display = 'none';
   if (doctorPanel) doctorPanel.style.display = 'block';
 
-  // Cập nhật thông tin bác sĩ
   const avatar = document.getElementById('doctorAvatar');
   const name = document.getElementById('doctorPanelName');
   const email = document.getElementById('doctorPanelEmail');
@@ -1713,23 +1723,47 @@ function openDoctorModal(userData) {
   if (name) name.textContent = 'BS. ' + userData.name;
   if (email) email.textContent = userData.email;
 
-  setMedicine('tay');
+  // ── Ẩn/hiện nút theo loại bác sĩ ──
+  const btnTay = document.getElementById('btn_tay');
+  const btnDong = document.getElementById('btn_dong');
+  const doctorType = userData.medicineType || 'tây y';
+
+  if (doctorType === 'tây y') {
+    if (btnTay) btnTay.style.display = 'block';
+    if (btnDong) btnDong.style.display = 'none';
+    setMedicine('tay');
+    currentMedicineType = 'tay';
+  } else {
+    if (btnTay) btnTay.style.display = 'none';
+    if (btnDong) {
+      btnDong.style.display = 'block';
+      btnDong.style.background = '#60A5FA';
+      btnDong.style.color = '#fff';
+      btnDong.style.borderColor = '#60A5FA';
+    }
+    setMedicine('dong');
+    currentMedicineType = 'dong';
+  }
+
   loadTodayQueue();
 }
 
 async function loadTodayQueue() {
   const today = new Date().toISOString().split('T')[0];
+
+  // Lấy loại bác sĩ từ currentDoctorData
+  const doctorType = currentDoctorData?.medicineType || 'tây y';
+
   const q = query(
     collection(db, 'appointments'),
     where('date', '==', today),
-    where('status', '==', 'confirmed')
+    where('status', '==', 'confirmed'),
+    where('medicineType', '==', doctorType)  // ← lọc theo loại
   );
 
   const snap = await getDocs(q);
   const appointments = [];
   snap.forEach(d => appointments.push({ id: d.id, ...d.data() }));
-
-  // Sắp xếp: ưu tiên người già (năm sinh nhỏ) lên đầu
   appointments.sort((a, b) => (a.time > b.time ? 1 : -1));
 
   const list = document.getElementById('queueList');
@@ -1757,9 +1791,10 @@ async function loadTodayQueue() {
         </div>
       </div>
       <button onclick="selectPatientForExam('${ap.id}','${ap.patientName}','${ap.symptoms || ''}','${ap.userId || ''}')" style="
-          padding:6px 12px;border-radius:8px;border:none;
-          background:#4a9b8e;color:#fff;font-size:12px;cursor:pointer;
-        ">Khám</button>
+        padding:6px 12px;border-radius:8px;border:none;
+        background:#4a9b8e;color:#fff;font-size:12px;cursor:pointer;
+      ">Khám</button>
+    </div>
   `).join('');
 }
 
@@ -1906,6 +1941,144 @@ function closeDoctorModal() {
   if (patientPanel) patientPanel.style.display = 'block';
 }
 
+function selectMethod(type) {
+  selectedMethod = type;
+  const btnTay = document.getElementById('method_station');
+  const btnDong = document.getElementById('method_home');
+
+  if (type === 'tây y') {
+    if (btnTay) { btnTay.style.background = '#60A5FA'; btnTay.style.color = '#fff'; btnTay.style.borderColor = '#60A5FA'; }
+    if (btnDong) { btnDong.style.background = '#fff'; btnDong.style.color = '#60A5FA'; btnDong.style.borderColor = '#60A5FA'; }
+  } else {
+    if (btnDong) { btnDong.style.background = '#60A5FA'; btnDong.style.color = '#fff'; btnDong.style.borderColor = '#60A5FA'; }
+    if (btnTay) { btnTay.style.background = '#fff'; btnTay.style.color = '#60A5FA'; btnTay.style.borderColor = '#60A5FA'; }
+  }
+}
+
+// ── DANH SÁCH THUỐC ──────────────────────────
+const DRUG_LIST = {
+  tay: [
+    { name: 'Paracetamol 500mg', usage: '1 viên x 3 lần/ngày sau ăn', qty: '10 viên' },
+    { name: 'Amoxicillin 500mg', usage: '1 viên x 3 lần/ngày', qty: '15 viên' },
+    { name: 'Ibuprofen 400mg', usage: '1 viên x 2 lần/ngày sau ăn', qty: '10 viên' },
+    { name: 'Cetirizine 10mg', usage: '1 viên/ngày buổi tối', qty: '7 viên' },
+    { name: 'Omeprazole 20mg', usage: '1 viên/ngày trước ăn sáng', qty: '14 viên' },
+    { name: 'Metformin 500mg', usage: '1 viên x 2 lần/ngày sau ăn', qty: '30 viên' },
+    { name: 'Amlodipine 5mg', usage: '1 viên/ngày', qty: '30 viên' },
+    { name: 'Atorvastatin 20mg', usage: '1 viên/ngày buổi tối', qty: '30 viên' },
+    { name: 'Salbutamol 4mg', usage: '1 viên x 3 lần/ngày', qty: '15 viên' },
+    { name: 'Dexamethasone 0.5mg', usage: '2 viên/ngày sau ăn', qty: '10 viên' },
+    { name: 'Vitamin C 500mg', usage: '1 viên/ngày sau ăn', qty: '10 viên' },
+    { name: 'Vitamin B1 B6 B12', usage: '1 viên/ngày sau ăn', qty: '10 viên' },
+    { name: 'Nước muối sinh lý 0.9%', usage: 'Nhỏ mũi/rửa vết thương', qty: '1 chai' },
+    { name: 'Kem Hydrocortisone 1%', usage: 'Bôi mỏng 2 lần/ngày', qty: '1 tuýp' },
+    { name: 'Cefuroxime 500mg', usage: '1 viên x 2 lần/ngày', qty: '14 viên' },
+    { name: 'Loperamide 2mg', usage: '1 viên sau mỗi lần tiêu chảy', qty: '6 viên' },
+    { name: 'Metronidazole 250mg', usage: '1 viên x 3 lần/ngày', qty: '15 viên' },
+    { name: 'Domperidone 10mg', usage: '1 viên x 3 lần/ngày trước ăn', qty: '15 viên' },
+    { name: 'Diclofenac 50mg', usage: '1 viên x 2 lần/ngày sau ăn', qty: '10 viên' },
+    { name: 'Prednisolone 5mg', usage: '2 viên/ngày sau ăn sáng', qty: '10 viên' },
+  ],
+  dong: [
+    { name: 'Hoàng kỳ', usage: '10-15g sắc uống ngày 1 thang', qty: '7 thang' },
+    { name: 'Cam thảo', usage: '4-6g sắc uống cùng thang thuốc', qty: '7 thang' },
+    { name: 'Đương quy', usage: '12g sắc uống ngày 1 thang', qty: '7 thang' },
+    { name: 'Bạch truật', usage: '12g sắc uống ngày 1 thang', qty: '7 thang' },
+    { name: 'Phục linh', usage: '12g sắc uống ngày 1 thang', qty: '7 thang' },
+    { name: 'Nhân sâm', usage: '6-12g sắc uống ngày 1 thang', qty: '7 thang' },
+    { name: 'Gừng tươi', usage: '6g sắc uống ngày 1 thang', qty: '7 thang' },
+    { name: 'Táo đỏ', usage: '3-5 quả sắc uống cùng thang', qty: '7 thang' },
+    { name: 'Quế chi', usage: '6-10g sắc uống ngày 1 thang', qty: '7 thang' },
+    { name: 'Bạch thược', usage: '12g sắc uống ngày 1 thang', qty: '7 thang' },
+    { name: 'Thục địa', usage: '15-30g sắc uống ngày 1 thang', qty: '7 thang' },
+    { name: 'Mạch môn', usage: '12g sắc uống ngày 1 thang', qty: '7 thang' },
+    { name: 'Trần bì', usage: '6g sắc uống ngày 1 thang', qty: '7 thang' },
+    { name: 'Bán hạ', usage: '6-12g sắc uống ngày 1 thang', qty: '7 thang' },
+    { name: 'Ý dĩ', usage: '15-30g sắc uống ngày 1 thang', qty: '7 thang' },
+    { name: 'Ngũ vị tử', usage: '6g sắc uống ngày 1 thang', qty: '7 thang' },
+    { name: 'Hoàng liên', usage: '3-6g sắc uống ngày 1 thang', qty: '7 thang' },
+    { name: 'Chi tử', usage: '6-12g sắc uống ngày 1 thang', qty: '7 thang' },
+    { name: 'Xuyên khung', usage: '6g sắc uống ngày 1 thang', qty: '7 thang' },
+    { name: 'Tô diệp', usage: '6-10g sắc uống ngày 1 thang', qty: '7 thang' },
+  ]
+};
+
+function searchDrug(keyword) {
+  const suggestions = document.getElementById('drugSuggestions');
+  if (!keyword.trim()) {
+    suggestions.style.display = 'none';
+    return;
+  }
+
+  const type = currentMedicineType || 'tay';
+  const list = DRUG_LIST[type] || [];
+  const filtered = list.filter(d =>
+    d.name.toLowerCase().includes(keyword.toLowerCase())
+  );
+
+  if (!filtered.length) {
+    suggestions.style.display = 'none';
+    return;
+  }
+
+  suggestions.style.display = 'block';
+  suggestions.innerHTML = filtered.map(d => `
+    <div onclick="addDrugFromSuggestion('${escapeHtml(d.name)}','${escapeHtml(d.qty)}','${escapeHtml(d.usage)}')"
+      style="
+        padding:8px 12px;cursor:pointer;font-size:13px;
+        border-bottom:1px solid #f0f0f0;
+        display:flex;justify-content:space-between;align-items:center;
+      "
+      onmouseover="this.style.background='#f0f7f6'"
+      onmouseout="this.style.background='#fff'"
+    >
+      <div>
+        <div style="font-weight:600;color:#1a3a5c">${escapeHtml(d.name)}</div>
+        <div style="font-size:11px;color:#7a8fa6">${escapeHtml(d.usage)}</div>
+      </div>
+      <span style="font-size:11px;color:#4a9b8e;white-space:nowrap;margin-left:8px">${escapeHtml(d.qty)}</span>
+    </div>
+  `).join('');
+}
+
+function addDrugFromSuggestion(name, qty, usage) {
+  const container = document.getElementById('prescriptionItems');
+  const row = document.createElement('div');
+  row.style.cssText = 'display:flex;flex-direction:column;gap:4px;margin-bottom:8px;background:#f8f9fa;border-radius:10px;padding:8px';
+  row.innerHTML = `
+    <div style="display:flex;gap:6px;align-items:center">
+      <input value="${escapeHtml(name)}" placeholder="Tên thuốc..." style="
+        flex:2;padding:7px 10px;border-radius:8px;
+        border:1.5px solid #e0e0e0;font-size:13px;
+        box-sizing:border-box;min-width:0;
+      ">
+      <input value="${escapeHtml(qty)}" placeholder="Số lượng" style="
+        flex:1;padding:7px 10px;border-radius:8px;
+        border:1.5px solid #e0e0e0;font-size:13px;
+        box-sizing:border-box;min-width:0;
+      ">
+      <button onclick="this.parentNode.parentNode.remove()" style="
+        width:28px;height:28px;flex-shrink:0;border-radius:50%;border:none;
+        background:#fee;color:#e55;cursor:pointer;font-size:15px;
+      ">✕</button>
+    </div>
+    <input value="${escapeHtml(usage)}" placeholder="Cách dùng..." style="
+      width:100%;padding:7px 10px;border-radius:8px;
+      border:1.5px solid #e0e0e0;font-size:13px;
+      box-sizing:border-box;
+    ">
+  `;
+  container.appendChild(row);
+
+  const input = document.getElementById('drugSearchInput');
+  const suggestions = document.getElementById('drugSuggestions');
+  if (input) input.value = '';
+  if (suggestions) suggestions.style.display = 'none';
+}
+
+window.searchDrug = searchDrug;
+window.addDrugFromSuggestion = addDrugFromSuggestion;
+window.selectMethod = selectMethod;
 window.showFirestorePrescriptionDetail = showFirestorePrescriptionDetail;
 window.switchDoctorTab = switchDoctorTab;
 window.openDoctorModal = openDoctorModal;
