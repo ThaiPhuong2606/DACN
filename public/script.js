@@ -25,6 +25,27 @@ import {
 const ALL_SLOTS = ['07:30','08:00','08:30','09:00','09:30','10:00',
                    '10:30','11:00','13:30','14:00','14:30','15:00'];
 
+const SEARCH_SUGGESTION_CLASS = "search-suggestions";
+const SEARCH_SUGGESTION_ITEM_CLASS = "search-suggestion";
+const SEARCH_SUGGESTION_ACTIVE_CLASS = "is-active";
+const SEARCH_HIGHLIGHT_CLASS = "search-highlight";
+
+const COMMON_SEARCH_TERMS = [
+  "giới thiệu",
+  "tiêm chủng",
+  "giáo dục sức khỏe",
+  "phòng chống dịch bệnh",
+  "chăm sóc trẻ em",
+  "khám sức khỏe",
+  "tin tức",
+  "tầm soát",
+  "ung thư",
+  "dinh dưỡng",
+  "sốt xuất huyết",
+  "khẩu trang",
+  "mẹ và bé"
+];
+
 let currentLang = "VI";
 const LANG_STORAGE_KEY = "siteLang";
 const GOOGLE_TRANSLATE_COOKIE = "googtrans";
@@ -128,6 +149,360 @@ function applyLanguage(lang) {
     family.options[4].text = t.form_parent;
     family.options[5].text = t.form_siblings;
   }
+}
+
+function normalizeSearchText(value) {
+  return value
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim();
+}
+
+function splitSearchTerms(value) {
+  return normalizeSearchText(value)
+    .split(/[^\p{L}\p{N}]+/u)
+    .map((part) => part.trim())
+    .filter(Boolean);
+}
+
+function normalizeSearchPhrase(value) {
+  return normalizeSearchText(value).replace(/\s+/g, " ");
+}
+
+function collectPhraseCandidates(text) {
+  const words = splitSearchTerms(text);
+  const phrases = [];
+
+  if (words.length === 1) {
+    phrases.push(words[0]);
+  }
+
+  for (let index = 0; index < words.length - 1; index += 1) {
+    phrases.push(`${words[index]} ${words[index + 1]}`);
+  }
+
+  for (let index = 0; index < words.length - 2; index += 1) {
+    phrases.push(`${words[index]} ${words[index + 1]} ${words[index + 2]}`);
+  }
+
+  return phrases;
+}
+
+function getSearchCorpus() {
+  const elements = Array.from(document.querySelectorAll(
+    "main h1, main h2, main h3, main h4, main p, main li, .menu a"
+  ));
+
+  const values = elements
+    .flatMap((el) => collectPhraseCandidates(el.textContent || ""))
+    .concat(COMMON_SEARCH_TERMS)
+    .concat(collectPhraseCandidates(document.title || ""));
+
+  const unique = new Set();
+  values.forEach((value) => {
+    const clean = value.trim();
+    if (!clean) return;
+    unique.add(clean);
+  });
+
+  return Array.from(unique);
+}
+
+function scoreSuggestion(term, query) {
+  const normalizedTerm = normalizeSearchText(term);
+  if (!query) return 1;
+  if (normalizedTerm === query) return 5;
+  if (normalizedTerm.startsWith(query)) return 4;
+  if (normalizedTerm.includes(query)) return 3;
+
+  const queryWords = query.split(/\s+/).filter(Boolean);
+  if (queryWords.length > 1 && queryWords.every((part) => normalizedTerm.includes(part))) {
+    return 2;
+  }
+
+  return 0;
+}
+
+function buildSearchSuggestions(query) {
+  const normalizedQuery = normalizeSearchText(query);
+  const corpus = getSearchCorpus();
+
+  if (!normalizedQuery) {
+    return corpus.slice(0, 8);
+  }
+
+  return corpus
+    .map((term) => ({ term, score: scoreSuggestion(term, normalizedQuery) }))
+    .filter((item) => item.score > 0)
+    .sort((a, b) => b.score - a.score || a.term.localeCompare(b.term, "vi"))
+    .slice(0, 8)
+    .map((item) => item.term);
+}
+
+function removeSearchSuggestions(input) {
+  const existing = input?.parentElement?.querySelector(`.${SEARCH_SUGGESTION_CLASS}`);
+  if (existing) existing.remove();
+
+  if (input) {
+    input.dataset.activeSuggestionIndex = "-1";
+  }
+}
+
+function renderSearchSuggestions(input, suggestions) {
+  if (!input) return;
+
+  removeSearchSuggestions(input);
+
+  if (!suggestions.length) return;
+
+  const wrapper = document.createElement("div");
+  wrapper.className = SEARCH_SUGGESTION_CLASS;
+  wrapper.setAttribute("role", "listbox");
+
+  suggestions.forEach((suggestion, index) => {
+    const item = document.createElement("button");
+    item.type = "button";
+    item.className = SEARCH_SUGGESTION_ITEM_CLASS;
+    item.setAttribute("role", "option");
+    item.setAttribute("data-suggestion-index", String(index));
+    item.textContent = suggestion;
+    item.addEventListener("click", () => {
+      input.value = suggestion;
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+      removeSearchSuggestions(input);
+      input.focus();
+    });
+    wrapper.appendChild(item);
+  });
+
+  input.parentElement?.appendChild(wrapper);
+}
+
+function setActiveSuggestion(input, nextIndex) {
+  const wrapper = input?.parentElement?.querySelector(`.${SEARCH_SUGGESTION_CLASS}`);
+  if (!wrapper) return;
+
+  const items = Array.from(wrapper.querySelectorAll(`.${SEARCH_SUGGESTION_ITEM_CLASS}`));
+  if (!items.length) return;
+
+  const normalizedIndex = ((nextIndex % items.length) + items.length) % items.length;
+  input.dataset.activeSuggestionIndex = String(normalizedIndex);
+
+  items.forEach((item, index) => {
+    item.classList.toggle(SEARCH_SUGGESTION_ACTIVE_CLASS, index === normalizedIndex);
+  });
+}
+
+function useActiveSuggestion(input) {
+  const wrapper = input?.parentElement?.querySelector(`.${SEARCH_SUGGESTION_CLASS}`);
+  if (!wrapper) return false;
+
+  const activeIndex = Number(input.dataset.activeSuggestionIndex || "-1");
+  const activeItem = wrapper.querySelector(`.${SEARCH_SUGGESTION_ITEM_CLASS}.${SEARCH_SUGGESTION_ACTIVE_CLASS}`)
+    || wrapper.querySelector(`[data-suggestion-index="${activeIndex}"]`);
+
+  if (!activeItem) return false;
+
+  const value = activeItem.textContent || "";
+  if (!value) return false;
+
+  input.value = value;
+  input.dispatchEvent(new Event("input", { bubbles: true }));
+  removeSearchSuggestions(input);
+  return true;
+}
+
+function getSearchHighlightRoots() {
+  const roots = Array.from(document.querySelectorAll("main, .container, .menu"));
+  return roots.length ? roots : [document.body].filter(Boolean);
+}
+
+function clearSearchHighlights(root) {
+  const marks = Array.from(root.querySelectorAll(`mark.${SEARCH_HIGHLIGHT_CLASS}`));
+  marks.forEach((mark) => {
+    const textNode = document.createTextNode(mark.textContent || "");
+    mark.replaceWith(textNode);
+  });
+  root.normalize();
+}
+
+function normalizeWithMap(text) {
+  let normalized = "";
+  const map = [];
+  let lastWasSpace = false;
+
+  for (let index = 0; index < text.length; index += 1) {
+    const character = text[index];
+    const lowerCharacter = character.toLowerCase();
+
+    if (/\s/.test(lowerCharacter)) {
+      if (!lastWasSpace && normalized.length > 0) {
+        normalized += " ";
+        map.push(index);
+        lastWasSpace = true;
+      }
+      continue;
+    }
+
+    const decomposed = lowerCharacter.normalize("NFD");
+    for (const part of decomposed) {
+      if (/[\u0300-\u036f]/.test(part)) continue;
+      normalized += part;
+      map.push(index);
+      lastWasSpace = false;
+    }
+  }
+
+  return { normalized, map };
+}
+
+function highlightTextNode(node, terms) {
+  const text = node.textContent || "";
+  if (!text.trim()) return;
+
+  const { normalized: lowerText, map } = normalizeWithMap(text);
+  const matchedTerms = terms
+    .filter((term, index, array) => term && array.indexOf(term) === index)
+    .sort((a, b) => b.length - a.length);
+
+  if (!matchedTerms.length) return;
+
+  const fragment = document.createDocumentFragment();
+  let index = 0;
+
+  while (index < text.length) {
+    let matchStart = -1;
+    let matchTerm = "";
+
+    for (const term of matchedTerms) {
+      const position = lowerText.indexOf(term, index);
+      if (position === -1) continue;
+      if (matchStart === -1 || position < matchStart) {
+        matchStart = position;
+        matchTerm = term;
+      }
+    }
+
+    if (matchStart === -1) {
+      fragment.appendChild(document.createTextNode(text.slice(index)));
+      break;
+    }
+
+    const startOriginal = map[matchStart] ?? matchStart;
+    const endNormalizedIndex = matchStart + matchTerm.length - 1;
+    const endOriginal = (map[endNormalizedIndex] ?? endNormalizedIndex) + 1;
+
+    if (startOriginal > index) {
+      fragment.appendChild(document.createTextNode(text.slice(index, startOriginal)));
+    }
+
+    const highlight = document.createElement("mark");
+    highlight.className = SEARCH_HIGHLIGHT_CLASS;
+    highlight.textContent = text.slice(startOriginal, endOriginal);
+    fragment.appendChild(highlight);
+
+    index = endOriginal;
+  }
+
+  node.replaceWith(fragment);
+}
+
+function applySearchHighlights(query) {
+  const normalizedQuery = normalizeSearchPhrase(query);
+  const terms = normalizedQuery ? [normalizedQuery] : [];
+
+  getSearchHighlightRoots().forEach((root) => {
+    clearSearchHighlights(root);
+
+    if (!terms.length) return;
+
+    const walker = document.createTreeWalker(
+      root,
+      NodeFilter.SHOW_TEXT,
+      {
+        acceptNode(node) {
+          if (!node.nodeValue || !node.nodeValue.trim()) return NodeFilter.FILTER_REJECT;
+
+          const parent = node.parentElement;
+          if (!parent) return NodeFilter.FILTER_REJECT;
+
+          if (parent.closest(`.${SEARCH_SUGGESTION_CLASS}, .${SEARCH_HIGHLIGHT_CLASS}, script, style, noscript, textarea, input, button, select, option`)) {
+            return NodeFilter.FILTER_REJECT;
+          }
+
+          return NodeFilter.FILTER_ACCEPT;
+        }
+      }
+    );
+
+    const textNodes = [];
+    while (walker.nextNode()) {
+      textNodes.push(walker.currentNode);
+    }
+
+    textNodes.forEach((node) => highlightTextNode(node, terms));
+  });
+}
+
+function initSearchAutocomplete() {
+  const searchInputs = Array.from(document.querySelectorAll("input.search"));
+  if (!searchInputs.length) return;
+
+  searchInputs.forEach((input) => {
+    if (input.dataset.autocompleteReady === "true") return;
+    input.dataset.autocompleteReady = "true";
+    input.setAttribute("autocomplete", "off");
+
+    const updateSuggestions = () => {
+      renderSearchSuggestions(input, buildSearchSuggestions(input.value));
+      setActiveSuggestion(input, 0);
+      applySearchHighlights(input.value);
+    };
+
+    input.addEventListener("focus", updateSuggestions);
+    input.addEventListener("input", updateSuggestions);
+    input.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") {
+        removeSearchSuggestions(input);
+        return;
+      }
+
+      const wrapper = input.parentElement?.querySelector(`.${SEARCH_SUGGESTION_CLASS}`);
+      if (!wrapper) return;
+
+      const items = Array.from(wrapper.querySelectorAll(`.${SEARCH_SUGGESTION_ITEM_CLASS}`));
+      if (!items.length) return;
+
+      const currentIndex = Number(input.dataset.activeSuggestionIndex || "-1");
+
+      if (event.key === "ArrowDown") {
+        event.preventDefault();
+        setActiveSuggestion(input, currentIndex + 1);
+      }
+
+      if (event.key === "ArrowUp") {
+        event.preventDefault();
+        setActiveSuggestion(input, currentIndex <= 0 ? items.length - 1 : currentIndex - 1);
+      }
+
+      if (event.key === "Enter") {
+        if (useActiveSuggestion(input)) {
+          event.preventDefault();
+        }
+      }
+    });
+
+    input.addEventListener("blur", () => {
+      window.setTimeout(() => removeSearchSuggestions(input), 120);
+    });
+
+    document.addEventListener("click", (event) => {
+      if (!input.parentElement?.contains(event.target)) {
+        removeSearchSuggestions(input);
+      }
+    });
+  });
 }
 
 async function loadUserProfile(user) {
@@ -527,6 +902,7 @@ function init() {
   });
 
   // Theo dõi trạng thái đăng nhập
+  initSearchAutocomplete();
   onAuthStateChanged(auth, updateUI);
     
     }

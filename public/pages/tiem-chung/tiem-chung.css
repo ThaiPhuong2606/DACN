@@ -1,0 +1,423 @@
+:root {
+  --tc-bg: #f4f8f5;
+  --tc-surface: rgba(255, 255, 255, 0.92);
+  --tc-surface-strong: #ffffff;
+  --tc-border: rgba(14, 62, 48, 0.14);
+  --tc-text: #123227;
+  --tc-muted: #4d6a62;
+  --tc-primary: #0e8a67;
+  --tc-secondary: #1f6fa4;
+  --tc-warm: #f9b74c;
+  --tc-shadow: 0 20px 40px rgba(9, 46, 35, 0.12);
+}
+
+body.page-tiem-chung {
+  background:
+    radial-gradient(circle at 14% 8%, rgba(14, 138, 103, 0.16), transparent 28%),
+    radial-gradient(circle at 85% 12%, rgba(31, 111, 164, 0.2), transparent 34%),
+    linear-gradient(180deg, #f7fcf7 0%, var(--tc-bg) 100%);
+  color: var(--tc-text);
+  font-family: "Be Vietnam Pro", "Segoe UI", sans-serif;
+}
+
+body.page-tiem-chung .topbar,
+body.page-tiem-chung .menu {
+  backdrop-filter: blur(10px);
+}
+
+.tc-wrap {
+  width: min(1180px, calc(100% - 32px));
+  margin: 26px auto 52px;
+  display: grid;
+  gap: 18px;
+}
+
+.tc-panel,
+.tc-panel-soft {
+  border-radius: 24px;
+  border: 1px solid var(--tc-border);
+  box-shadow: var(--tc-shadow);
+}
+
+.tc-panel {
+  background: var(--tc-surface);
+}
+
+.tc-panel-soft {
+  background: linear-gradient(160deg, #ffffff 0%, #f3fbf8 100%);
+}
+
+.tc-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.55fr) minmax(320px, 0.95fr);
+  gap: 18px;
+  padding: 26px;
+  position: relative;
+  overflow: hidden;
+}
+
+.tc-hero::after {
+  content: "";
+  position: absolute;
+  right: -120px;
+  bottom: -140px;
+  width: 320px;
+  height: 320px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(31, 111, 164, 0.24), rgba(31, 111, 164, 0));
+  pointer-events: none;
+}
+
+.tc-kicker {
+  display: inline-block;
+  padding: 8px 14px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--tc-secondary);
+  background: rgba(31, 111, 164, 0.14);
+}
+
+.tc-title {
+  margin: 14px 0 10px;
+  font-family: "Manrope", "Be Vietnam Pro", sans-serif;
+  font-size: clamp(1.8rem, 2.8vw, 2.9rem);
+  line-height: 1.15;
+  letter-spacing: -0.03em;
+  max-width: 24ch;
+}
+
+.tc-subtitle {
+  color: var(--tc-muted);
+  font-size: 1rem;
+  line-height: 1.75;
+  max-width: 65ch;
+}
+
+.tc-hero__actions {
+  margin-top: 20px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.tc-btn {
+  border: 1px solid transparent;
+  border-radius: 999px;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  padding: 11px 16px;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+
+.tc-btn:hover {
+  transform: translateY(-1px);
+}
+
+.tc-btn--primary {
+  background: linear-gradient(135deg, var(--tc-primary), #0d6a50);
+  color: #fff;
+  box-shadow: 0 12px 24px rgba(14, 138, 103, 0.26);
+}
+
+.tc-btn--ghost {
+  color: var(--tc-secondary);
+  border-color: rgba(31, 111, 164, 0.2);
+  background: rgba(255, 255, 255, 0.88);
+}
+
+.tc-hero__stats {
+  display: grid;
+  gap: 10px;
+}
+
+.tc-stat {
+  padding: 16px;
+}
+
+.tc-stat-label {
+  color: var(--tc-muted);
+  font-size: 13px;
+}
+
+.tc-stat-value {
+  margin-top: 6px;
+  font-family: "Manrope", "Be Vietnam Pro", sans-serif;
+  font-size: 1.7rem;
+  font-weight: 800;
+  color: #0d543f;
+}
+
+.tc-stat-badge {
+  display: inline-block;
+  margin-top: 8px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #245f8c;
+  background: rgba(31, 111, 164, 0.12);
+}
+
+.tc-filter {
+  padding: 18px;
+  display: grid;
+  gap: 14px;
+}
+
+.tc-search {
+  display: grid;
+  gap: 8px;
+}
+
+.tc-search__label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #285244;
+}
+
+.tc-search__controls {
+  display: flex;
+  gap: 10px;
+}
+
+.tc-search__controls input {
+  flex: 1;
+  min-width: 0;
+  border: 1px solid rgba(14, 138, 103, 0.25);
+  border-radius: 12px;
+  background: #fff;
+  color: var(--tc-text);
+  padding: 12px 14px;
+  font: inherit;
+  font-size: 14px;
+  outline: none;
+  transition: box-shadow 0.18s ease, border-color 0.18s ease;
+}
+
+.tc-search__controls input:focus {
+  border-color: var(--tc-primary);
+  box-shadow: 0 0 0 4px rgba(14, 138, 103, 0.15);
+}
+
+.tc-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.tc-chip {
+  border: 1px solid rgba(18, 50, 39, 0.12);
+  background: #f8fbfa;
+  color: #31554a;
+  border-radius: 999px;
+  padding: 8px 13px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.tc-chip:hover {
+  border-color: rgba(14, 138, 103, 0.35);
+}
+
+.tc-chip.is-active {
+  background: linear-gradient(135deg, #0e8a67, #1f6fa4);
+  color: #fff;
+  border-color: transparent;
+}
+
+.tc-vaccine-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.tc-vaccine {
+  padding: 18px;
+  display: grid;
+  gap: 10px;
+  transition: transform 0.22s ease, box-shadow 0.22s ease;
+}
+
+.tc-vaccine:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 16px 32px rgba(9, 46, 35, 0.15);
+}
+
+.tc-vaccine.is-hidden {
+  display: none;
+}
+
+.tc-vaccine h2 {
+  font-size: 1.05rem;
+  margin: 0;
+}
+
+.tc-vaccine p {
+  margin: 0;
+  color: var(--tc-muted);
+  line-height: 1.65;
+}
+
+.tc-vaccine ul {
+  margin: 0;
+  padding-left: 16px;
+  color: #284b40;
+  display: grid;
+  gap: 6px;
+}
+
+.tc-empty-state {
+  margin: 0;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: #fff7e6;
+  border: 1px solid rgba(249, 183, 76, 0.45);
+  color: #7f5a18;
+  font-weight: 600;
+}
+
+.tc-schedule,
+.tc-faq {
+  padding: 20px;
+}
+
+.tc-section-head h2 {
+  margin: 0;
+  font-size: 1.3rem;
+}
+
+.tc-section-head p {
+  margin: 6px 0 0;
+  color: var(--tc-muted);
+  line-height: 1.7;
+}
+
+.tc-schedule-grid {
+  margin-top: 14px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.tc-schedule-grid article {
+  border-radius: 16px;
+  padding: 14px;
+  background: linear-gradient(170deg, #ffffff 0%, #eef8f5 100%);
+  border: 1px solid rgba(14, 138, 103, 0.16);
+}
+
+.tc-schedule-grid h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.tc-schedule-grid p {
+  margin: 8px 0 0;
+  color: var(--tc-muted);
+  line-height: 1.65;
+}
+
+.tc-faq-list {
+  margin-top: 14px;
+  display: grid;
+  gap: 10px;
+}
+
+.tc-faq-item {
+  border: 1px solid rgba(18, 50, 39, 0.12);
+  border-radius: 14px;
+  overflow: hidden;
+  background: #fff;
+}
+
+.tc-faq-item.is-hidden {
+  display: none;
+}
+
+.tc-faq-toggle {
+  width: 100%;
+  text-align: left;
+  padding: 14px 16px;
+  border: none;
+  background: transparent;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  color: #16372c;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+
+.tc-faq-toggle span {
+  font-size: 20px;
+  color: var(--tc-secondary);
+}
+
+.tc-faq-content {
+  padding: 0 16px 14px;
+  color: var(--tc-muted);
+  line-height: 1.75;
+}
+
+.tc-reveal {
+  opacity: 0;
+  transform: translateY(18px);
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+
+.tc-reveal.is-visible {
+  opacity: 1;
+  transform: none;
+}
+
+@media (max-width: 1000px) {
+  .tc-hero {
+    grid-template-columns: 1fr;
+  }
+
+  .tc-vaccine-grid,
+  .tc-schedule-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 700px) {
+  .tc-wrap {
+    width: min(100% - 20px, 1180px);
+    margin: 18px auto 36px;
+  }
+
+  .tc-hero,
+  .tc-filter,
+  .tc-vaccine,
+  .tc-schedule,
+  .tc-faq {
+    padding: 16px;
+    border-radius: 18px;
+  }
+
+  .tc-search__controls {
+    flex-direction: column;
+  }
+
+  .tc-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .tc-vaccine-grid,
+  .tc-schedule-grid {
+    grid-template-columns: 1fr;
+  }
+}
